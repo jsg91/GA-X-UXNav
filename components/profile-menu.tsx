@@ -1,19 +1,20 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
-import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View
+  Modal
 } from 'react-native';
+import {
+  Button,
+  ScrollView,
+  XStack,
+  YStack
+} from 'tamagui';
 
 export function ProfileMenu() {
   const [isVisible, setIsVisible] = useState(false);
@@ -21,21 +22,14 @@ export function ProfileMenu() {
   const theme = colorScheme ?? 'light';
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: () => {
-          // TODO: Implement actual logout logic
-          console.log('User signed out');
-          setIsVisible(false);
-        }},
-      ]
-    );
+    AlertUtils.showLogoutConfirmation(() => {
+      // TODO: Implement actual logout logic
+      console.log('User signed out');
+      setIsVisible(false);
+    });
   };
 
-  const handleMenuItemPress = (item: typeof NAVIGATION_CONFIG.profileMenu.items[0]) => {
+  const handleMenuItemPress = (item: typeof NAVIGATION_CONFIG.profileMenu.items[number]) => {
     setIsVisible(false);
 
     if (item.id === 'logout') {
@@ -49,17 +43,19 @@ export function ProfileMenu() {
   return (
     <>
       {/* Profile Menu Button */}
-      <TouchableOpacity
-        style={styles.profileButton}
+      <Button
+        size="$2"
+        backgroundColor="transparent"
+        padding="$2"
+        marginRight="$2"
         onPress={() => setIsVisible(true)}
-        activeOpacity={0.7}
       >
         <IconSymbol
-          name="person.fill"
+          name="account"
           size={24}
-          color={Colors[theme].text}
+          color="$color"
         />
-      </TouchableOpacity>
+      </Button>
 
       {/* Profile Menu Modal */}
       <Modal
@@ -68,141 +64,100 @@ export function ProfileMenu() {
         animationType="fade"
         onRequestClose={() => setIsVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
+        <Button
+          flex={1}
+          backgroundColor="rgba(0, 0, 0, 0.4)"
+          justifyContent="flex-start"
+          alignItems="flex-end"
+          paddingTop="$12"
+          paddingRight="$4"
           onPress={() => setIsVisible(false)}
         >
-          <ThemedView style={[styles.menuContainer, { backgroundColor: Colors[theme].background }]}>
-            <View style={styles.menuHeader}>
-              <ThemedText type="subtitle" style={styles.menuTitle}>
-                Profile Menu
-              </ThemedText>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsVisible(false)}
-              >
-                <IconSymbol
-                  name="xmark"
-                  size={20}
-                  color={Colors[theme].text}
-                />
-              </TouchableOpacity>
-            </View>
+          <ThemedView
+            width="70%"
+            maxWidth={300}
+            height="100%"
+            borderTopLeftRadius="$5"
+            borderBottomLeftRadius="$5"
+            backgroundColor="$background"
+            shadowColor="$shadowColor"
+            shadowOffset={{ width: -2, height: 0 }}
+            shadowOpacity={0.25}
+            shadowRadius={10}
+          >
+            <YStack paddingHorizontal="$5" paddingTop="$5" paddingBottom="$5" borderBottomWidth="$0.5" borderBottomColor="$borderColor">
+              <XStack justifyContent="space-between" alignItems="center">
+                <ThemedText type="subtitle">
+                  Profile Menu
+                </ThemedText>
+                <Button
+                  size="$2"
+                  backgroundColor="transparent"
+                  padding="$1"
+                  onPress={() => setIsVisible(false)}
+                >
+                  <IconSymbol
+                    name="close"
+                    size={20}
+                    color="$color"
+                  />
+                </Button>
+              </XStack>
+            </YStack>
 
-            <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
+            <ScrollView flex={1} paddingHorizontal="$5" showsVerticalScrollIndicator={false}>
               {NAVIGATION_CONFIG.profileMenu.items
                 .filter(item => item.visible)
                 .map((item) => (
-                  <TouchableOpacity
+                  <Button
                     key={item.id}
-                    style={styles.menuItem}
-                    onPress={() => handleMenuItemPress(item)}
+                    paddingVertical="$3"
+                    paddingHorizontal={0}
+                    backgroundColor="transparent"
+                    borderBottomWidth="$0.5"
+                    borderBottomColor="rgba(0, 0, 0, 0.05)"
                     disabled={!item.href && item.id !== 'logout'}
+                    onPress={() => {
+                      if (item.href || item.id === 'logout') {
+                        handleMenuItemPress(item as any);
+                      }
+                    }}
+                    justifyContent="flex-start"
                   >
                     {item.href ? (
-                      <Link href={item.href} style={styles.menuItemLink}>
-                        <View style={styles.menuItemContent}>
+                      <Link href={item.href} style={{ width: '100%' }}>
+                        <XStack alignItems="center" gap="$3" width="100%">
                           <IconSymbol
                             name={item.icon as any}
                             size={20}
-                            color={Colors[theme].text}
+                            color="$color"
                           />
-                          <ThemedText style={styles.menuItemText}>
+                          <ThemedText flex={1}>
                             {item.name}
                           </ThemedText>
-                        </View>
+                        </XStack>
                       </Link>
                     ) : (
-                      <View style={styles.menuItemContent}>
+                      <XStack alignItems="center" gap="$3" width="100%">
                         <IconSymbol
                           name={item.icon as any}
                           size={20}
-                          color={item.id === 'logout' ? '#FF3B30' : Colors[theme].text}
+                          color={item.id === 'logout' ? '#FF3B30' : '$color'}
                         />
                         <ThemedText
-                          style={[
-                            styles.menuItemText,
-                            item.id === 'logout' && styles.logoutText
-                          ]}
+                          flex={1}
+                          color={item.id === 'logout' ? '#FF3B30' : '$color'}
                         >
                           {item.name}
                         </ThemedText>
-                      </View>
+                      </XStack>
                     )}
-                  </TouchableOpacity>
+                  </Button>
                 ))}
             </ScrollView>
           </ThemedView>
-        </TouchableOpacity>
+        </Button>
       </Modal>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  profileButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  menuContainer: {
-    width: '70%',
-    maxWidth: 300,
-    height: '100%',
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-    paddingTop: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: -2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  menuTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  menuContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  menuItem: {
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  menuItemLink: {
-    width: '100%',
-  },
-  menuItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  menuItemText: {
-    fontSize: 16,
-    flex: 1,
-  },
-  logoutText: {
-    color: '#FF3B30',
-  },
-});
-

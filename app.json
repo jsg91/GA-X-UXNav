@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "UXNav",
-    "slug": "uxnav",
+    "name": "GA-X UXNav",
+    "slug": "ga-x",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "uxnav",
+    "scheme": "ga-x",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -38,7 +38,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

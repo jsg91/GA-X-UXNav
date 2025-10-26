@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -23,7 +23,7 @@ export default function AboutScreen() {
             style={styles.headerIcon}
           />
           <ThemedText type="title" style={styles.title}>
-            About GA-X UXNav
+            About GA-X
           </ThemedText>
           <ThemedText style={styles.version}>
             Version 1.0.0
@@ -33,10 +33,10 @@ export default function AboutScreen() {
         {/* Description Section */}
         <View style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            What is GA-X UXNav?
+            What is GA-X?
           </ThemedText>
           <ThemedText style={styles.description}>
-            GA-X UXNav is a comprehensive aviation management platform designed specifically
+            GA-X is a comprehensive aviation management platform designed specifically
             for general aviation pilots, clubs, and aerodrome operators. Our mission is to
             streamline aviation operations through intuitive design and powerful functionality.
           </ThemedText>
@@ -125,7 +125,7 @@ export default function AboutScreen() {
             Get in Touch
           </ThemedText>
           <ThemedText style={styles.description}>
-            Have questions or suggestions? We'd love to hear from you!
+            Have questions or suggestions? We&apos;d love to hear from you!
           </ThemedText>
           <ThemedText style={styles.contactInfo}>
             • Visit our support center for help{'\n'}
@@ -137,7 +137,7 @@ export default function AboutScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <ThemedText style={styles.footerText}>
-            © 2025 GA-X UXNav. Built for the aviation community.
+            © 2025 GA-X. Built for the aviation community.
           </ThemedText>
         </View>
       </ThemedView>
@@ -165,11 +165,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
+    fontFamily: 'Arial',
   },
   version: {
     fontSize: 16,
     opacity: 0.7,
     textAlign: 'center',
+    fontFamily: 'Arial',
   },
   section: {
     marginBottom: 30,
@@ -179,11 +181,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 15,
     color: '#333',
+    fontFamily: 'Arial',
   },
   description: {
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'left',
+    fontFamily: 'Arial',
   },
   featureList: {
     gap: 15,
@@ -196,12 +200,14 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 16,
     flex: 1,
+    fontFamily: 'Arial',
   },
   contactInfo: {
     fontSize: 16,
     lineHeight: 24,
     marginTop: 10,
     opacity: 0.8,
+    fontFamily: 'Arial',
   },
   footer: {
     alignItems: 'center',
@@ -213,6 +219,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     opacity: 0.6,
+    fontFamily: 'Arial',
   },
 });
 

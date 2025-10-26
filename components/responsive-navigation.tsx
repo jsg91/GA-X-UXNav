@@ -1,306 +1,202 @@
-import { Link, Tabs, usePathname, useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, Platform, TouchableOpacity } from 'react-native';
+import { StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, View, XStack } from 'tamagui';
 
-import { HapticTab } from '@/components/haptic-tab';
 import { ProfileMenu } from '@/components/profile-menu';
+import { RoleSwitcher } from '@/components/role-switcher';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
-import { Colors } from '@/constants/theme';
+import { NotificationBadge } from '@/components/ui/notification-badge';
+import { NAVIGATION_CONFIG, ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-const { width } = Dimensions.get('window');
-const isWeb = Platform.OS === 'web';
-
-// Breakpoint for big screens (tablets and desktops)
-const BIG_SCREEN_BREAKPOINT = 768;
 
 interface ResponsiveNavigationProps {
   children: React.ReactNode;
 }
 
+// Breakpoint for showing sidebar vs bottom nav
+const SIDEBAR_BREAKPOINT = 768;
+
 export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const pathname = usePathname();
   const router = useRouter();
-  const [isPressed, setIsPressed] = useState(false);
+  const pathname = usePathname();
+  const [notificationCount] = useState(3); // Mock notification count
+  const [messageCount] = useState(2); // Mock message count
+  const [currentRole, setCurrentRole] = useState<Role>(ROLE_CONFIG.roles[0]); // Default to Pilot
 
-  // Determine if we're on a big screen
-  const isBigScreen = isWeb ? width >= BIG_SCREEN_BREAKPOINT : false;
 
-  // Filter visible navigation items and sort by order
-  const visibleNavItems = NAVIGATION_CONFIG.tabBar.items
-    .filter(item => item.visible)
-    .sort((a, b) => a.order - b.order);
-
-  const handleHomePress = () => {
-    if (pathname !== '/(tabs)/' && pathname !== '/(tabs)/index') {
-      router.replace('/(tabs)/');
-    }
+  const handleNotificationPress = () => {
+    AlertUtils.showNotification(notificationCount, 'notification');
   };
 
-  const handlePressIn = () => {
-    setIsPressed(true);
+  const handleMessagePress = () => {
+    AlertUtils.showNotification(messageCount, 'message');
   };
 
-  const handlePressOut = () => {
-    setIsPressed(false);
+  const handleTabPress = (href: string) => {
+    router.push(href as any);
   };
 
-  if (isBigScreen) {
-    // Big screen: Header navigation + Footer
-    return (
-      <ThemedView style={{ flex: 1 }}>
-        {/* Header Navigation */}
-        <ThemedView style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors[theme].tint + '20',
-          backgroundColor: Colors[theme].background,
-        }}>
-          {/* Clickable Title - All the way left */}
-          <TouchableOpacity
-            style={{
-              paddingHorizontal: 0,
-              paddingVertical: 8,
-              borderRadius: 8,
-              marginRight: 24,
-              backgroundColor: 'transparent',
-              borderBottomWidth: 2,
-              borderBottomColor: isPressed ? Colors[theme].tint : 'transparent',
-            }}
-            onPress={handleHomePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            activeOpacity={0.6}
-            accessibilityRole="button"
-            accessibilityLabel="Go to Home"
-            accessibilityHint="Tap to return to the home screen"
-          >
-            <ThemedText
-              style={{
-                fontSize: 20,
-                fontWeight: 'bold',
-                color: Colors[theme].text,
-              }}
-            >
-              GA-X UXNav
-            </ThemedText>
-          </TouchableOpacity>
+  const handleRoleChange = (role: Role) => {
+    setCurrentRole(role);
+    // Here you could add logic to update permissions, load role-specific data, etc.
+  };
 
-          {/* Navigation Items - Centered */}
-          <ThemedView style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            flex: 1,
-            justifyContent: 'center',
-          }}>
-            {visibleNavItems.map((item) => (
-              <NavigationItem
-                key={item.id}
-                item={item}
-                pathname={pathname}
-              />
-            ))}
-          </ThemedView>
+  // Get current tab index based on pathname
+  const getCurrentTabIndex = () => {
+    const tabItems = NAVIGATION_CONFIG.tabBar.items.filter(item => item.visible);
+    const currentIndex = tabItems.findIndex(item => {
+      // Handle root path
+      if (item.href === '/(tabs)/' && pathname === '/') return true;
+      // Handle other tab paths
+      if (item.href && pathname.includes(item.href.replace('/(tabs)/', ''))) return true;
+      return item.href === pathname;
+    });
+    return currentIndex >= 0 ? currentIndex : 0;
+  };
 
-          {/* Profile Menu - Right */}
-          <ProfileMenu />
-        </ThemedView>
-
-        {/* Main Content */}
-        <ThemedView style={{ flex: 1 }}>
-          {children}
-        </ThemedView>
-
-        {/* Footer */}
-        <Footer />
-      </ThemedView>
-    );
-  }
-
-  // Small screen: Bottom tab navigation (default behavior)
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[theme].tint,
-        headerShown: true,
-        headerTitle: '',
-        headerLeft: () => (
-          <TouchableOpacity
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 8,
-              marginLeft: 8,
-              backgroundColor: 'transparent',
-              borderBottomWidth: 2,
-              borderBottomColor: isPressed ? Colors[theme].tint : 'transparent',
-            }}
-            onPress={handleHomePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            activeOpacity={0.6}
-            accessibilityRole="button"
-            accessibilityLabel="Go to Home"
-            accessibilityHint="Tap to return to the home screen"
-          >
-            <ThemedText
-              style={{
-                fontSize: 20,
-                fontWeight: 'bold',
-                color: Colors[theme].text,
-              }}
-            >
-              GA-X UXNav
-            </ThemedText>
-          </TouchableOpacity>
-        ),
-        headerRight: () => <ProfileMenu />,
-        tabBarButton: HapticTab,
-      }}>
-      {visibleNavItems.map((item) => (
-        <Tabs.Screen
-          key={item.id}
-          name={item.id === 'dashboard' ? 'index' : item.id}
-          options={{
-            title: item.name,
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name={item.icon as any} color={color} />
-            ),
-          }}
-        />
-      ))}
-
-      {/* Keep existing explore screen for now */}
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
+    <SafeAreaView style={{ flex: 1 }}>
+      <StatusBar
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
       />
 
-      {/* Hidden screens - exclude profile menu items completely from mobile tabs */}
-      {NAVIGATION_CONFIG.tabBar.items
-        .filter(item => !item.visible)
-        .map((item) => (
-          <Tabs.Screen
-            key={item.id}
-            name={item.id === 'dashboard' ? 'index' : item.id}
-            options={{
-              href: null,
-            }}
-          />
-        ))}
-
-      {/* Hide all profile menu screens from mobile tab navigation */}
-      {NAVIGATION_CONFIG.profileMenu.items.map((item) => (
-        <Tabs.Screen
-          key={item.id}
-          name={item.id}
-          options={{
-            href: null, // Completely hide from tab bar
-          }}
-        />
-      ))}
-    </Tabs>
-  );
-}
-
-interface NavigationItemProps {
-  item: typeof NAVIGATION_CONFIG.tabBar.items[0];
-  pathname: string;
-}
-
-function NavigationItem({ item, pathname }: NavigationItemProps) {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'light';
-
-  // Handle dashboard -> index mapping for navigation
-  const navigationHref = item.id === 'dashboard' ? '/(tabs)/' : item.href;
-  const isActive = item.id === 'dashboard' ? pathname === '/(tabs)/' || pathname === '/(tabs)/index' : pathname === item.href;
-
-  return (
-    <Link href={navigationHref}>
-      <ThemedView
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          borderRadius: 8,
-          backgroundColor: isActive ? Colors[theme].tint + '15' : 'transparent',
-        }}
+      {/* Header */}
+      <View
+        backgroundColor="$background"
+        borderBottomWidth="$0.5"
+        borderBottomColor="$borderColor"
+        position="relative"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 1 }}
+        shadowOpacity={0.1}
+        shadowRadius={2}
       >
-        <IconSymbol
-          name={item.icon as any}
-          size={20}
-          color={isActive ? Colors[theme].tint : Colors[theme].text}
-        />
-        <ThemedText
-          style={{
-            fontSize: 14,
-            fontWeight: isActive ? '600' : '400',
-            color: isActive ? Colors[theme].tint : Colors[theme].text,
-          }}
+        <XStack
+          alignItems="center"
+          justifyContent="space-between"
+          paddingHorizontal="$4"
+          paddingVertical="$3"
+          minHeight={56}
         >
-          {item.name}
-        </ThemedText>
-      </ThemedView>
-    </Link>
-  );
-}
+          <XStack width={140} alignItems="center" justifyContent="flex-start" gap="$2">
+            <RoleSwitcher
+              currentRole={currentRole}
+              onRoleChange={handleRoleChange}
+            />
+            <Button
+              size="$2"
+              backgroundColor="transparent"
+              padding="$2"
+              onPress={AlertUtils.showAviationUpdates}
+            >
+              <IconSymbol
+                name="newspaper"
+                size={20}
+                color="$color"
+              />
+            </Button>
+          </XStack>
 
-function Footer() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'light';
+          <View width={70} alignItems="flex-end" justifyContent="center">
+            <XStack alignItems="center" gap="$2">
+              {/* Messages Icon */}
+              <NotificationBadge
+                count={messageCount}
+                icon="message-text"
+                onPress={handleMessagePress}
+              />
 
-  return (
-    <ThemedView
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderTopWidth: 1,
-        borderTopColor: Colors[theme].tint + '20',
-        backgroundColor: Colors[theme].background,
-      }}
-    >
-      {/* Centered text */}
-      <ThemedView style={{ flex: 1, alignItems: 'center' }}>
-        <ThemedText
-          style={{
-            fontSize: 12,
-            color: Colors[theme].text + '80',
-            fontWeight: '400',
-          }}
+              {/* Notification Bell Icon */}
+              <NotificationBadge
+                count={notificationCount}
+                icon="bell"
+                onPress={handleNotificationPress}
+              />
+
+              {/* Profile Menu */}
+              <ProfileMenu />
+            </XStack>
+          </View>
+        </XStack>
+
+        {/* Absolutely positioned title for perfect centering */}
+        <View
+          position="absolute"
+          left={0}
+          right={0}
+          top={0}
+          bottom={0}
+          alignItems="center"
+          justifyContent="center"
+          paddingHorizontal={156}
         >
-          by Swiss Aviation Ventures
-        </ThemedText>
-      </ThemedView>
+          <ThemedText type="title" textAlign="center">
+            GA-X
+          </ThemedText>
+        </View>
+      </View>
 
-      {/* Footer content can be customized here */}
-      <ThemedText
-        style={{
-          fontSize: 12,
-          color: Colors[theme].text + '80',
-          fontWeight: '400',
-        }}
+      {/* Main Content */}
+      <View flex={1} paddingBottom={0}>
+        {children}
+      </View>
+
+      {/* Bottom Tab Bar */}
+      <View
+        backgroundColor="$background"
+        flexDirection="row"
+        justifyContent="space-around"
+        alignItems="center"
+        paddingHorizontal="$4"
+        paddingVertical="$2"
+        borderTopWidth="$0.5"
+        borderTopColor="$borderColor"
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: -1 }}
+        shadowOpacity={0.1}
+        shadowRadius={2}
       >
-        Aviation Management Platform
-      </ThemedText>
-    </ThemedView>
+        {NAVIGATION_CONFIG.tabBar.items
+          .filter(item => item.visible)
+          .map((item, index) => {
+            const isActive = getCurrentTabIndex() === index;
+            return (
+              <Button
+                key={item.id}
+                flex={1}
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                paddingVertical="$2"
+                minHeight={64}
+                gap="$1"
+                backgroundColor="transparent"
+                onPress={() => handleTabPress(item.href)}
+              >
+                <IconSymbol
+                  name={item.icon as any}
+                  size={24}
+                  color={isActive ? "$tint" : "$tabIconDefault"}
+                />
+                <ThemedText
+                  fontSize="$2"
+                  textAlign="center"
+                  color={isActive ? "$tint" : "$tabIconDefault"}
+                >
+                  {item.name}
+                </ThemedText>
+              </Button>
+            );
+          })}
+      </View>
+    </SafeAreaView>
   );
 }
+

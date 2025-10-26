@@ -1,89 +1,51 @@
-// Fallback for using MaterialCommunityIcons on Android and web.
+/**
+ * Icon component using Expo vector icons (MaterialCommunityIcons) consistently across all platforms.
+ * This ensures identical appearance on iOS, Android, and web using proper TypeScript types.
+ * - see MaterialCommunityIcons in the [Icons Directory](https://icons.expo.fyi).
+ */
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import React from 'react';
+import { OpaqueColorValue, type StyleProp, type TextStyle, View } from 'react-native';
+import { useTheme } from 'tamagui';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialCommunityIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+// Get proper TypeScript types from @expo/vector-icons
+type MaterialCommunityIconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-/**
- * Add your SF Symbols to MaterialCommunityIcons mappings here.
- * - see MaterialCommunityIcons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
-const MAPPING = {
-  // Navigation icons from NAVIGATION.ts
-  'group': 'account-group',
-  'receipt': 'receipt',
-  'description': 'file-document',
-  'memory': 'memory',
-  'business': 'domain',
-  'event': 'calendar',
-  'storefront': 'storefront',
-  'map': 'map',
-  'public': 'earth',
-  'place': 'map-marker',
-  'check-box': 'checkbox-marked',
-  'person-add': 'account-plus',
-  'assignment': 'clipboard-text',
-  'verified': 'check-circle',
-  'radio': 'radio',
-  'share': 'share',
-  'flight': 'airplane',
-  'book': 'book',
-  'build': 'hammer-wrench',
-  'calculate': 'calculator',
-  'school': 'school',
-  'person': 'account',
-  'warning': 'alert',
-  'local-hospital': 'hospital',
-  'lightbulb': 'lightbulb',
-  'help': 'help',
-  'info': 'information',
-  'view-dashboard': 'view-dashboard',
-  'calendar-check': 'calendar-check',
-  'airplane-edit': 'airplane-edit',
-  'wrench': 'wrench',
-  'airport': 'airport',
-  'file-document-multiple': 'file-document-multiple',
-  'stadium-variant': 'stadium-variant',
-  'menu': 'menu',
-  'cog': 'cog',
-  'certificate': 'certificate',
-  'credit-card': 'credit-card',
-  'logout': 'logout',
-
-  // Profile menu icons
-  'account': 'account',
-  'account.fill': 'account',
-  'person.fill': 'account',
-
-  // Existing icons
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code-braces',
-  'chevron.right': 'chevron-right',
-  'xmark': 'close',
-} as IconMapping;
-
-/**
- * An icon component that uses native SF Symbols on iOS, and MaterialCommunityIcons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to MaterialCommunityIcons.
- */
-export function IconSymbol({
-  name,
-  size = 24,
-  color,
-  style,
-}: {
-  name: IconSymbolName;
+interface IconSymbolProps {
+  name: MaterialCommunityIconName | string;
   size?: number;
-  color: string | OpaqueColorValue;
+  color?: string | OpaqueColorValue;
   style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
-}) {
-  return <MaterialCommunityIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }
+
+const IconSymbol = ({ name, size = 24, color, style, ...rest }: IconSymbolProps) => {
+  const theme = useTheme();
+  
+  // Resolve Tamagui color tokens (e.g., "$tint", "$color") to actual color values
+  let resolvedColor = color;
+  if (typeof color === 'string' && color.startsWith('$')) {
+    const tokenName = color.slice(1); // Remove the $ prefix
+    const themeValue = theme[tokenName];
+    
+    // Handle different Tamagui token value types
+    if (themeValue) {
+      if (typeof themeValue === 'object' && 'val' in themeValue) {
+        resolvedColor = String(themeValue.val);
+      } else if (typeof themeValue === 'string') {
+        resolvedColor = themeValue;
+      } else {
+        resolvedColor = String(themeValue);
+      }
+    }
+  }
+  
+  // Wrap in View to prevent parent styles from interfering on iOS
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <MaterialCommunityIcons style={style} name={name as any} color={resolvedColor as any} size={size} {...rest} />
+    </View>
+  );
+};
+
+export { IconSymbol };

@@ -10,6 +10,30 @@ interface BaseNavItem {
   userOnly?: boolean;
 }
 
+// Role definitions
+export interface Role {
+  id: string;
+  name: string;
+  icon: string;
+  label: string;
+  visible: boolean;
+  permissionRequired?: boolean;
+}
+
+export const ROLE_CONFIG = {
+  roles: [
+    { id: 'pilot', name: 'Pilot', icon: 'airplane', label: 'Pilots', visible: true },
+    { id: 'instructor', name: 'Instructor', icon: 'school', label: 'Instructors', visible: true },
+    { id: 'flightschool-admin', name: 'Flight School Admin', icon: 'school', label: 'Flightschool-Admin', visible: true },
+    { id: 'flightclub-admin', name: 'Flight Club Admin', icon: 'account-group', label: 'Flightclub-Admin', visible: true },
+    { id: 'aerodrome-admin', name: 'Aerodrome Admin', icon: 'airport', label: 'Aerodrome-Admin', visible: true },
+    { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance (inventory, marketplace, + admin, permission based)', visible: true },
+    { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA (all together, permission based)', visible: true, permissionRequired: true },
+    { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs (all together, permission based)', visible: true, permissionRequired: true },
+    { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', visible: true, permissionRequired: true },
+  ] as const satisfies readonly Role[],
+};
+
 export const NAVIGATION_CONFIG = {
     // ===== APP STORE/FEATURE CATALOG =====
     /**
