@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "GA-X-UXNav",
-    "slug": "GA-X-UXNav",
+    "name": "UXNav",
+    "slug": "uxnav",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "gaxuxnav",
+    "scheme": "uxnav",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
