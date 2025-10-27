@@ -34,6 +34,7 @@ export function ThemedText({
       fontSize={fontSize}
       fontWeight={fontWeight}
       lineHeight={lineHeight}
+      fontFamily="$body"
       {...rest}
     />
   );

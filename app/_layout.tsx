@@ -6,10 +6,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { TamaguiProvider } from 'tamagui';
+import { PortalProvider, TamaguiProvider } from 'tamagui';
 
 import { tamaguiConfig } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeProvider as CustomThemeProvider, useThemeContext } from '@/hooks/use-theme-context';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -18,9 +18,8 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  
+function AppLayout() {
+  const { resolvedTheme } = useThemeContext();
   const [loaded, error] = useFonts({
     ...MaterialCommunityIcons.font,
   });
@@ -43,14 +42,24 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme ?? 'light'}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'GA-X' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={resolvedTheme}>
+      <PortalProvider>
+        <ThemeProvider value={resolvedTheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'GA-X' }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </PortalProvider>
     </TamaguiProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <CustomThemeProvider>
+      <AppLayout />
+    </CustomThemeProvider>
   );
 }

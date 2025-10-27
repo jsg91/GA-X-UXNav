@@ -3,11 +3,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
 import React, { useMemo } from 'react';
 import {
-  Adapt,
-  Select,
-  Sheet,
-  XStack,
-  YStack
+    Adapt,
+    Select,
+    Sheet,
+    XStack,
+    YStack
 } from 'tamagui';
 
 interface RoleSwitcherProps {
@@ -57,19 +57,19 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
       >
         <Select.Trigger
         size="$2"
-        backgroundColor="rgba(0, 123, 255, 0.1)"
+        backgroundColor="rgba(0, 122, 255, 0.1)"
         borderWidth="$0.5"
-        borderColor="rgba(0, 123, 255, 0.3)"
+        borderColor="rgba(0, 122, 255, 0.3)"
         borderRadius="$3"
         paddingHorizontal="$3"
         paddingVertical="$2.5"
         iconAfter={ChevronDown}
         hoverStyle={{
-          backgroundColor: 'rgba(0, 123, 255, 0.15)',
-          borderColor: 'rgba(0, 123, 255, 0.5)',
+          backgroundColor: 'rgba(0, 122, 255, 0.15)',
+          borderColor: 'rgba(0, 122, 255, 0.5)',
         }}
         pressStyle={{
-          backgroundColor: 'rgba(0, 123, 255, 0.2)',
+          backgroundColor: 'rgba(0, 122, 255, 0.2)',
         }}
       >
         <XStack alignItems="center" gap="$1.5">
@@ -109,7 +109,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                   padding="$3"
                   paddingBottom="$2"
                   fontSize="$4"
-                  fontFamily="$sans"
+                  fontFamily="$body"
                   fontWeight="$6"
                   color="$color"
                   borderBottomWidth="$0.5"
@@ -128,10 +128,10 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                     borderBottomWidth={index === visibleRoles.length - 1 ? 0 : '$0.5'}
                     borderBottomColor="rgba(0, 0, 0, 0.05)"
                     hoverStyle={{
-                      backgroundColor: 'rgba(0, 123, 255, 0.08)',
+                      backgroundColor: 'rgba(0, 122, 255, 0.08)',
                     }}
                     pressStyle={{
-                      backgroundColor: 'rgba(0, 123, 255, 0.12)',
+                      backgroundColor: 'rgba(0, 122, 255, 0.12)',
                     }}
                   >
                     <XStack alignItems="center" gap="$3" flex={1}>
@@ -142,8 +142,8 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                       />
                       <Select.ItemText
                         flex={1}
-                        fontSize="$3.5"
-                        fontFamily="$sans"
+                        fontSize="$4"
+                        fontFamily="$body"
                         color={currentRole.id === role.id ? '$tint' : '$color'}
                         fontWeight={currentRole.id === role.id ? '$5' : '$4'}
                       >
@@ -200,7 +200,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                   padding="$3"
                   paddingBottom="$2"
                   fontSize="$4"
-                  fontFamily="$sans"
+                  fontFamily="$body"
                   fontWeight="$6"
                   color="$color"
                   borderBottomWidth="$0.5"
@@ -219,10 +219,10 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                     borderBottomWidth={index === visibleRoles.length - 1 ? 0 : '$0.5'}
                     borderBottomColor="rgba(0, 0, 0, 0.05)"
                     hoverStyle={{
-                      backgroundColor: 'rgba(0, 123, 255, 0.08)',
+                      backgroundColor: 'rgba(0, 122, 255, 0.08)',
                     }}
                     pressStyle={{
-                      backgroundColor: 'rgba(0, 123, 255, 0.12)',
+                      backgroundColor: 'rgba(0, 122, 255, 0.12)',
                     }}
                   >
                     <XStack alignItems="center" gap="$3" flex={1}>
@@ -233,8 +233,8 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                       />
                       <Select.ItemText
                         flex={1}
-                        fontSize="$3.5"
-                        fontFamily="$sans"
+                        fontSize="$4"
+                        fontFamily="$body"
                         color={currentRole.id === role.id ? '$tint' : '$color'}
                         fontWeight={currentRole.id === role.id ? '$5' : '$4'}
                       >

@@ -8,6 +8,8 @@ interface BaseNavItem {
   order: number;
   adminOnly?: boolean;
   userOnly?: boolean;
+  smallScreen?: boolean; // Only show on small screens (bottom nav)
+  largeScreen?: boolean; // Only show on large screens (sidebar)
 }
 
 // Role definitions
@@ -141,25 +143,26 @@ export const NAVIGATION_CONFIG = {
      */
     tabBar: {
       items: [
-        { id: 'dashboard', name: 'Dashboard', href: '/(tabs)/', icon: 'view-dashboard', visible: true, order: 0 },
-        { id: 'reservations', name: 'Reservations', href: '/(tabs)/reservations', icon: 'calendar-check', visible: true, order: 1 },
-        { id: 'aircrafts', name: 'Aircrafts', href: '/(tabs)/aircrafts', icon: 'airplane-edit', visible: true, order: 2 },
-        { id: 'logbook', name: 'Logbook', href: '/(tabs)/logbook', icon: 'book', visible: true, order: 3 },
-        { id: 'maintenance', name: 'Maintenance', href: '/(tabs)/maintenance', icon: 'wrench', visible: true, order: 5 },
-        { id: 'club', name: 'Club', href: '/(tabs)/club', icon: 'account-group', visible: true, order: 6 },
-        { id: 'aerodromes', name: 'Aerodromes', href: '/(tabs)/aerodromes', icon: 'airport', visible: true, order: 7 },
-        { id: 'route-planner', name: 'Route Planner', href: '/(tabs)/route-planner', icon: 'map', visible: true, order: 8 },
-        { id: 'documents', name: 'Documents', href: '/(tabs)/documents', icon: 'file-document-multiple', visible: true, order: 9 },
-        { id: 'events', name: 'Events', href: '/(tabs)/events', icon: 'stadium-variant', visible: true, order: 10 },
-        { id: 'menu', name: 'Menu', href: '/(tabs)/menu', icon: 'menu', visible: true, order: 11 },
-        { id: 'admin', name: 'Admin', href: '/(tabs)/admin', icon: 'cog', adminOnly: true, visible: false, order: 12 },
-        { id: 'support', name: 'Support', href: '/(tabs)/support', icon: 'help', visible: false, order: 13 },
-        { id: 'about', name: 'About', href: '/(tabs)/about', icon: 'info', visible: false, order: 14 },
-        { id: 'feature-request', name: 'Feature Request', href: '/(tabs)/feature-request', icon: 'lightbulb', visible: false, order: 15 },
-        { id: 'invoicing', name: 'Invoicing', href: '/(tabs)/invoicing', icon: 'receipt', visible: false, order: 16 },
-        { id: 'checklists', name: 'Checklists', href: '/(tabs)/checklists', icon: 'check-box', visible: false, order: 17 },
-        { id: 'country-aips', name: 'Country AIPs', href: '/(tabs)/country-aips', icon: 'public', visible: false, order: 18 },
-        { id: 'organizations', name: 'Organizations', href: '/(tabs)/organizations', icon: 'business', visible: false, order: 19 },
+        { id: 'dashboard', name: 'Dashboard', href: '/(tabs)/', icon: 'view-dashboard', visible: true, order: 0, smallScreen: true },
+        { id: 'reservations', name: 'Reservations', href: '/(tabs)/reservations', icon: 'calendar-check', visible: true, order: 1, largeScreen: true },
+        { id: 'aircrafts', name: 'Fly', href: '/(tabs)/aircrafts', icon: 'airplane', visible: true, order: 2, smallScreen: true },
+        { id: 'logbook', name: 'Log', href: '/(tabs)/logbook', icon: 'book-open-variant', visible: true, order: 3, smallScreen: true },
+        { id: 'maintenance', name: 'Maintenance', href: '/(tabs)/maintenance', icon: 'wrench', visible: true, order: 5, largeScreen: true },
+        { id: 'club', name: 'Club', href: '/(tabs)/club', icon: 'account-group', visible: true, order: 6, smallScreen: true },
+        { id: 'aerodromes', name: 'Aerodromes', href: '/(tabs)/aerodromes', icon: 'airport', visible: true, order: 7, largeScreen: true },
+        { id: 'route-planner', name: 'Plan', href: '/(tabs)/route-planner', icon: 'map', visible: true, order: 8, smallScreen: true },
+        { id: 'documents', name: 'Documents', href: '/(tabs)/documents', icon: 'file-document-multiple', visible: true, order: 9, smallScreen: true },
+        { id: 'events', name: 'Events', href: '/(tabs)/events', icon: 'calendar-star', visible: true, order: 10, largeScreen: true },
+        { id: 'menu', name: 'Menu', href: '/(tabs)/menu', icon: 'menu', visible: true, order: 11, smallScreen: true },
+        { id: 'admin', name: 'Admin', href: '/(tabs)/admin', icon: 'cog', adminOnly: true, visible: false, order: 12, largeScreen: true },
+        { id: 'support', name: 'Support', href: '/(tabs)/support', icon: 'help', visible: false, order: 13, largeScreen: true },
+        { id: 'about', name: 'About', href: '/(tabs)/about', icon: 'info', visible: false, order: 14, largeScreen: true },
+        { id: 'feature-request', name: 'Feature Request', href: '/(tabs)/feature-request', icon: 'lightbulb', visible: false, order: 15, largeScreen: true },
+        { id: 'invoicing', name: 'Invoicing', href: '/(tabs)/invoicing', icon: 'receipt', visible: false, order: 16, largeScreen: true },
+        { id: 'checklists', name: 'Checklists', href: '/(tabs)/checklists', icon: 'checkbox-marked', visible: false, order: 17, largeScreen: true },
+        { id: 'country-aips', name: 'Country AIPs', href: '/(tabs)/country-aips', icon: 'earth', visible: false, order: 18, largeScreen: true },
+        { id: 'organizations', name: 'Organizations', href: '/(tabs)/organizations', icon: 'office-building', visible: false, order: 19, largeScreen: true },
+        { id: 'tips', name: 'Tips', href: '/(tabs)/tips', icon: 'lightbulb', visible: true, order: 20, smallScreen: true, largeScreen: true },
       ] as const satisfies readonly BaseNavItem[],
     },
   
@@ -177,4 +180,43 @@ export const NAVIGATION_CONFIG = {
         { id: 'logout', name: 'Sign Out', href: null, icon: 'logout', visible: true, order: 5, userOnly: true },
       ] as const satisfies readonly BaseNavItem[],
     },
+
+    // ===== HOTKEYS CONFIGURATION =====
+    /**
+     * Keyboard shortcuts configuration for web platform
+     */
+    hotkeys: {
+      // Navigation shortcuts (GitHub-style)
+      navigation: {
+        dashboard: { keys: 'g d', route: '/(tabs)/', description: 'Go to Dashboard' },
+        reservations: { keys: 'g r', route: '/(tabs)/reservations', description: 'Go to Reservations' },
+        logbook: { keys: 'g l', route: '/(tabs)/logbook', description: 'Go to Logbook' },
+        aircrafts: { keys: 'g a', route: '/(tabs)/aircrafts', description: 'Go to Aircraft' },
+        aerodromes: { keys: 'g e', route: '/(tabs)/aerodromes', description: 'Go to Aerodromes' },
+        maintenance: { keys: 'g m', route: '/(tabs)/maintenance', description: 'Go to Maintenance' },
+        routePlanner: { keys: 'g p', route: '/(tabs)/route-planner', description: 'Go to Route Planner' },
+      },
+
+      // Global actions
+      actions: {
+        focusSearch: { keys: 'cmd+k, ctrl+k, /', description: 'Focus search field' },
+        toggleAI: { keys: 'cmd+j, ctrl+j, shift+space', description: 'Toggle AI Assistant' },
+        newItem: { keys: 'n', description: 'Create new item (context-aware)' },
+        help: { keys: 'shift+?', route: '/(tabs)/tips', description: 'Show keyboard shortcuts' },
+        closeModals: { keys: 'escape', description: 'Close modals and overlays' },
+      },
+
+      // Context-aware actions by route
+      contextual: {
+        '/(tabs)/reservations': {
+          newItem: { action: 'newReservation', description: 'New Reservation' }
+        },
+        '/(tabs)/logbook': {
+          newItem: { action: 'newLogEntry', description: 'New Log Entry' }
+        },
+        '/(tabs)/aircrafts': {
+          newItem: { action: 'newFlight', description: 'New Flight' }
+        }
+      }
+    } as const,
   } as const;

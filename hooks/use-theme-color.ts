@@ -4,16 +4,16 @@
  */
 
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeContext } from '@/hooks/use-theme-context';
 import { useTheme } from 'tamagui';
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = useColorScheme() ?? 'light';
+  const { resolvedTheme } = useThemeContext();
   const tamaguiTheme = useTheme();
-  const colorFromProps = props[theme];
+  const colorFromProps = props[resolvedTheme];
 
   if (colorFromProps) {
     return colorFromProps;
@@ -23,6 +23,6 @@ export function useThemeColor(
     if (tamaguiColor) {
       return String(tamaguiColor);
     }
-    return Colors[theme][colorName];
+    return Colors[resolvedTheme][colorName];
   }
 }

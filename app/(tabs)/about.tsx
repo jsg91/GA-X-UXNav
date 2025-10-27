@@ -5,11 +5,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeContext } from '@/hooks/use-theme-context';
 
 export default function AboutScreen() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'light';
+  const { resolvedTheme } = useThemeContext();
 
   return (
     <ScrollView style={styles.container}>
@@ -19,7 +18,7 @@ export default function AboutScreen() {
           <IconSymbol
             name="info"
             size={80}
-            color={Colors[theme].tint}
+            color={Colors[resolvedTheme].tint}
             style={styles.headerIcon}
           />
           <ThemedText type="title" style={styles.title}>
@@ -50,56 +49,56 @@ export default function AboutScreen() {
 
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
-              <IconSymbol name="view-dashboard" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="view-dashboard" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Comprehensive Dashboard
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="calendar-check" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="calendar-check" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Reservation Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="airplane-edit" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="airplane-edit" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Aircraft Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="book" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="book" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Digital Logbook
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="wrench" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="wrench" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Maintenance Tracking
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="map" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="map" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Route Planning Tools
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="account-group" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="account-group" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Club Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="airport" size={24} color={Colors[theme].tint} />
+              <IconSymbol name="airport" size={24} color={Colors[resolvedTheme].tint} />
               <ThemedText style={styles.featureText}>
                 Aerodrome Directory
               </ThemedText>

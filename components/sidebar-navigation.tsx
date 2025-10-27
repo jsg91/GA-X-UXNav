@@ -18,6 +18,7 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const handleTabPress = (href: string) => {
     router.push(href as any);
@@ -35,7 +36,9 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    setTimeout(() => setIsExpanded(true), 50); // Small delay for smooth expansion
+    if (hasInitialized) {
+      setTimeout(() => setIsExpanded(true), 50); // Small delay for smooth expansion
+    }
   };
 
   const handleMouseLeave = () => {
@@ -43,14 +46,13 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
     setIsExpanded(false);
   };
 
-  const handleClick = () => {
-    // Toggle expansion state on click for better UX
-    setIsExpanded(!isExpanded);
-  };
 
   // Initial entrance animation
   useEffect(() => {
-    setTimeout(() => setIsVisible(true), 100);
+    setTimeout(() => {
+      setIsVisible(true);
+      setHasInitialized(true);
+    }, 100);
   }, []);
 
   // Notify parent of expansion changes
@@ -65,7 +67,9 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
     return href === pathname;
   };
 
-  const visibleItems = NAVIGATION_CONFIG.tabBar.items.filter(item => item.visible);
+  const visibleItems = NAVIGATION_CONFIG.tabBar.items.filter(item => {
+    return ('largeScreen' in item && item.largeScreen) || item.visible;
+  });
 
   return (
     <YStack
@@ -82,100 +86,124 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
       shadowRadius={2}
       width={isExpanded ? 240 : 72}
       zIndex={1000}
-      animation={[
-        isVisible ? "quick" : "lazy",
-        {
-          opacity: {
-            overshootClamping: true,
-          },
-          width: {
-            overshootClamping: true,
-          },
-          scale: {
-            overshootClamping: true,
-          },
-        },
-      ]}
+      animation="quick"
       opacity={isVisible ? 1 : 0}
       scale={isVisible ? 1 : 0.95}
       onMouseEnter={Platform.OS === 'web' ? handleMouseEnter : undefined}
       onMouseLeave={Platform.OS === 'web' ? handleMouseLeave : undefined}
-      onPress={handleClick}
       paddingVertical="$4"
       gap="$2"
       overflow="hidden"
       justifyContent="flex-start"
-      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
     >
-      {visibleItems.map((item, index) => {
-        const isActive = isTabActive(item.href);
-        return (
-          <Button
-            key={item.id}
-            flexDirection="row"
-            alignItems="center"
-            justifyContent="flex-start"
-            paddingHorizontal="$4"
-            paddingVertical="$3"
-            backgroundColor={isActive ? "rgba(0, 123, 255, 0.1)" : "transparent"}
-            borderRadius="$2"
-            marginHorizontal="$2"
-            gap="$3"
-            onPress={() => handleTabPress(item.href)}
-            hoverStyle={Platform.OS === 'web' ? {
-              backgroundColor: isActive ? "rgba(0, 123, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
-              scale: 1.02,
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-            } : undefined}
-            pressStyle={{
-              backgroundColor: isActive ? "rgba(0, 123, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
-              scale: 0.98,
-            }}
-            animation={[
-              "quick",
-              {
-                opacity: {
-                  delay: isVisible ? 200 + (index * 50) : 0,
-                  duration: 300,
-                },
-                transform: {
-                  delay: isVisible ? 200 + (index * 50) : 0,
-                  duration: 300,
-                },
-              },
-            ]}
-            opacity={1}
-            transform="translateY(0px)"
-          >
-            <IconSymbol
-              name={item.icon as any}
-              size={24}
-              color={isActive ? "$tint" : "$tabIconDefault"}
-              animation="quick"
-            />
+      {/* Navigation Items */}
+      <YStack flex={1} gap="$2">
+        {visibleItems.map((item, index) => {
+          const isActive = isTabActive(item.href);
+          return (
+            <Button
+              key={item.id}
+              flexDirection="row"
+              alignItems="center"
+              justifyContent="flex-start"
+              paddingHorizontal="$4"
+              paddingVertical="$3"
+              backgroundColor={isActive ? "rgba(0, 122, 255, 0.1)" : "transparent"}
+              borderRadius="$2"
+              marginHorizontal="$2"
+              gap="$3"
+              onPress={() => handleTabPress(item.href)}
+              hoverStyle={Platform.OS === 'web' ? {
+                backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                scale: 1.02,
+                userSelect: 'none',
+              } : undefined}
+              pressStyle={{
+                backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                scale: 0.98,
+              }}
+              style={{
+                userSelect: 'none',
+              }}
+              opacity={1}
+            >
+              <IconSymbol
+                name={item.icon as any}
+                size={24}
+                color={isActive ? "$tint" : "$tabIconDefault"}
+              />
             <ThemedText
               fontSize="$4"
               fontWeight={isActive ? "$5" : "$3"}
               color={isActive ? "$tint" : "$color"}
               numberOfLines={1}
-              animation={[
-                "quick",
-                {
-                  opacity: {
-                    delay: isExpanded ? 150 : 0,
-                    duration: 200,
-                  },
-                },
-              ]}
               opacity={isExpanded ? 1 : 0}
-              scale={isExpanded ? 1 : 0.95}
-              transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+              style={{
+                userSelect: 'none',
+              }}
             >
               {item.name}
             </ThemedText>
-          </Button>
-        );
-      })}
+            </Button>
+          );
+        })}
+      </YStack>
+
+      {/* GA-X AI Assistant Button - Fixed at bottom, standalone */}
+      <Button
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="flex-start"
+        paddingHorizontal="$4"
+        paddingVertical="$3"
+        backgroundColor="rgba(0, 122, 255, 0.1)"
+        borderRadius="$2"
+        marginHorizontal="$2"
+        marginBottom="$2"
+        gap={isExpanded ? "$3" : "$0"}
+        onPress={() => {
+          console.log('GA-X AI Assistant clicked');
+          // TODO: Open AI assistant modal or navigate to AI page
+        }}
+        hoverStyle={Platform.OS === 'web' ? {
+          backgroundColor: 'rgba(0, 122, 255, 0.2)',
+          scale: 1.02,
+          boxShadow: isExpanded ? '0 0 20px rgba(0, 122, 255, 0.4)' : '0 0 15px rgba(0, 122, 255, 0.3)',
+          userSelect: 'none',
+        } : {
+          backgroundColor: 'rgba(0, 122, 255, 0.2)',
+          scale: 1.02,
+        }}
+        pressStyle={{
+          backgroundColor: 'rgba(0, 122, 255, 0.3)',
+          scale: 0.98,
+        }}
+        style={Platform.OS === 'web' ? {
+          boxShadow: isExpanded
+            ? '0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2)'
+            : '0 0 10px rgba(0, 122, 255, 0.3)',
+          userSelect: 'none',
+        } : {}}
+      >
+        <IconSymbol
+          name="brain"
+          size={24}
+          color="#007AFF"
+        />
+        {isExpanded && (
+          <ThemedText
+            fontSize="$4"
+            fontWeight="$5"
+            color="#007AFF"
+            numberOfLines={1}
+            style={{
+              userSelect: 'none',
+            }}
+          >
+            GA-X AI Assistant
+          </ThemedText>
+        )}
+      </Button>
     </YStack>
   );
 }

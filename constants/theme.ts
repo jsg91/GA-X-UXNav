@@ -4,31 +4,108 @@
  */
 
 import { createAnimations } from '@tamagui/animations-react-native';
-import { createTamagui, createTokens, createFont } from 'tamagui';
+import { createFont, createTamagui, createTokens } from 'tamagui';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#007AFF'; // iOS blue
+const tintColorDark = '#0A84FF';  // iOS blue dark variant
+
+// Create Arial font for all text
+const arialFont = createFont({
+  family: 'Arial, sans-serif',
+  size: {
+    1: 11,
+    2: 12,
+    3: 13,
+    4: 14,
+    5: 15,
+    6: 16,
+    7: 18,
+    8: 20,
+    9: 24,
+    10: 30,
+    11: 36,
+    12: 48,
+    true: 16,
+  },
+  lineHeight: {
+    1: 14,
+    2: 16,
+    3: 18,
+    4: 20,
+    5: 22,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
+    10: 42,
+    11: 48,
+    12: 60,
+    true: 24,
+  },
+  weight: {
+    1: '300',
+    2: '400',
+    3: '500',
+    4: '600',
+    5: '700',
+    6: '800',
+    7: '900',
+    true: '400',
+  },
+  letterSpacing: {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+    11: 0,
+    12: 0,
+    true: 0,
+  },
+  face: {
+    300: { normal: 'Arial' },
+    400: { normal: 'Arial' },
+    500: { normal: 'Arial' },
+    600: { normal: 'Arial' },
+    700: { normal: 'Arial' },
+    800: { normal: 'Arial' },
+    900: { normal: 'Arial' },
+  },
+});
 
 export const tokens = createTokens({
   color: {
     // Light theme colors
-    light_text: '#11181C',
-    light_background: '#fff',
+    light_text: '#000000',
+    light_background: '#FFFFFF',
     light_tint: tintColorLight,
-    light_icon: '#687076',
-    light_tabIconDefault: '#687076',
+    light_icon: '#333333',
+    light_tabIconDefault: '#666666',
     light_tabIconSelected: tintColorLight,
     light_border: 'rgba(0, 0, 0, 0.1)',
     light_shadow: 'rgba(0, 0, 0, 0.1)',
+    light_outlineColor: 'rgba(0, 123, 255, 0.5)',
     // Dark theme colors
-    dark_text: '#ECEDEE',
-    dark_background: '#151718',
+    dark_text: '#FFFFFF',
+    dark_background: '#000000',
     dark_tint: tintColorDark,
-    dark_icon: '#9BA1A6',
-    dark_tabIconDefault: '#9BA1A6',
+    dark_icon: '#CCCCCC',
+    dark_tabIconDefault: '#999999',
     dark_tabIconSelected: tintColorDark,
     dark_border: 'rgba(255, 255, 255, 0.1)',
     dark_shadow: 'rgba(0, 0, 0, 0.3)',
+    dark_outlineColor: 'rgba(0, 123, 255, 0.7)',
+    // Add missing tokens that themes reference
+    tint: tintColorLight,
+    color: '#000000',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    outlineColor: 'rgba(0, 123, 255, 0.5)',
   },
   space: {
     0: 0,
@@ -76,50 +153,6 @@ export const tokens = createTokens({
     10: 20,
     true: 8,
   },
-  font: {
-    sans: 'Arial, sans-serif',
-    mono: 'Arial, monospace',
-  },
-  fontSize: {
-    1: 11,
-    2: 12,
-    3: 13,
-    4: 14,
-    5: 15,
-    6: 16,
-    7: 18,
-    8: 20,
-    9: 24,
-    10: 30,
-    11: 36,
-    12: 48,
-    true: 16,
-  },
-  fontWeight: {
-    1: '300',
-    2: '400',
-    3: '500',
-    4: '600',
-    5: '700',
-    6: '800',
-    7: '900',
-    true: '400',
-  },
-  lineHeight: {
-    1: 11,
-    2: 12,
-    3: 16,
-    4: 18,
-    5: 20,
-    6: 24,
-    7: 28,
-    8: 32,
-    9: 36,
-    10: 42,
-    11: 48,
-    12: 60,
-    true: 24,
-  },
   zIndex: {
     0: 0,
     1: 100,
@@ -130,65 +163,6 @@ export const tokens = createTokens({
   },
 });
 
-// Create font configuration for Arial
-const arialFont = createFont({
-  family: 'Arial, sans-serif',
-  size: {
-    1: 11,
-    2: 12,
-    3: 13,
-    4: 14,
-    5: 15,
-    6: 16,
-    7: 18,
-    8: 20,
-    9: 24,
-    10: 30,
-    11: 36,
-    12: 48,
-    true: 16,
-  },
-  lineHeight: {
-    1: 11,
-    2: 12,
-    3: 16,
-    4: 18,
-    5: 20,
-    6: 24,
-    7: 28,
-    8: 32,
-    9: 36,
-    10: 42,
-    11: 48,
-    12: 60,
-    true: 24,
-  },
-  weight: {
-    1: '300',
-    2: '400',
-    3: '500',
-    4: '600',
-    5: '700',
-    6: '800',
-    7: '900',
-    true: '400',
-  },
-  letterSpacing: {
-    1: 0,
-    2: -0.5,
-    3: -1,
-    true: 0,
-  },
-  face: {
-    300: { normal: 'Arial' },
-    400: { normal: 'Arial' },
-    500: { normal: 'Arial' },
-    600: { normal: 'Arial' },
-    700: { normal: 'Arial' },
-    800: { normal: 'Arial' },
-    900: { normal: 'Arial' },
-  },
-});
 
 // Create themes
 export const lightTheme = {
@@ -197,40 +171,54 @@ export const lightTheme = {
   backgroundPress: '#e5e5e5',
   backgroundFocus: '#f0f0f0',
   color: tokens.color.light_text,
-  colorHover: tokens.color.light_tint,
-  colorPress: tokens.color.light_tint,
-  colorFocus: tokens.color.light_tint,
+  colorHover: tokens.color.tint,
+  colorPress: tokens.color.tint,
+  colorFocus: tokens.color.tint,
   borderColor: tokens.color.light_border,
   borderColorHover: tokens.color.light_border,
-  borderColorPress: tokens.color.light_tint,
-  borderColorFocus: tokens.color.light_tint,
+  borderColorPress: tokens.color.tint,
+  borderColorFocus: tokens.color.tint,
   shadowColor: tokens.color.light_shadow,
   shadowColorHover: tokens.color.light_shadow,
   shadowColorPress: tokens.color.light_shadow,
   shadowColorFocus: tokens.color.light_shadow,
+  outlineColor: tokens.color.light_outlineColor,
+  outlineColorHover: tokens.color.light_outlineColor,
+  outlineColorPress: tokens.color.tint,
+  outlineColorFocus: tokens.color.tint,
 };
 
 export const darkTheme = {
   background: tokens.color.dark_background,
-  backgroundHover: '#2a2a2a',
-  backgroundPress: '#3a3a3a',
-  backgroundFocus: '#2f2f2f',
+  backgroundHover: '#1a1a1a',
+  backgroundPress: '#2a2a2a',
+  backgroundFocus: '#1f1f1f',
   color: tokens.color.dark_text,
-  colorHover: tokens.color.dark_tint,
-  colorPress: tokens.color.dark_tint,
-  colorFocus: tokens.color.dark_tint,
+  colorHover: tokens.color.tint,
+  colorPress: tokens.color.tint,
+  colorFocus: tokens.color.tint,
   borderColor: tokens.color.dark_border,
   borderColorHover: tokens.color.dark_border,
-  borderColorPress: tokens.color.dark_tint,
-  borderColorFocus: tokens.color.dark_tint,
+  borderColorPress: tokens.color.tint,
+  borderColorFocus: tokens.color.tint,
   shadowColor: tokens.color.dark_shadow,
   shadowColorHover: tokens.color.dark_shadow,
   shadowColorPress: tokens.color.dark_shadow,
   shadowColorFocus: tokens.color.dark_shadow,
+  outlineColor: tokens.color.dark_outlineColor,
+  outlineColorHover: tokens.color.dark_outlineColor,
+  outlineColorPress: tokens.color.tint,
+  outlineColorFocus: tokens.color.tint,
 };
 
 // Create animations using react-native-reanimated
 const animations = createAnimations({
+  quick: {
+    type: 'spring',
+    damping: 20,
+    mass: 1.2,
+    stiffness: 250,
+  },
   fast: {
     type: 'spring',
     damping: 20,
@@ -244,6 +232,11 @@ const animations = createAnimations({
     stiffness: 100,
   },
   slow: {
+    type: 'spring',
+    damping: 20,
+    stiffness: 60,
+  },
+  lazy: {
     type: 'spring',
     damping: 20,
     stiffness: 60,
@@ -331,21 +324,23 @@ export type Tokens = typeof tokens;
 // Export for backward compatibility - return plain strings
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#000000',
+    background: '#FFFFFF',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#333333',
+    tabIconDefault: '#666666',
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#FFFFFF',
+    background: '#000000',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#CCCCCC',
+    tabIconDefault: '#999999',
     tabIconSelected: tintColorDark,
   },
 };
 
-export const Fonts = tokens.font.sans;
+export const Fonts = {
+  family: 'Arial, sans-serif',
+};

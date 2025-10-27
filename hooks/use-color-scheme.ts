@@ -1,1 +1,2 @@
-export { useColorScheme } from 'react-native';
+export { useColorSchemeOverride as useColorScheme } from './use-theme-context';
+

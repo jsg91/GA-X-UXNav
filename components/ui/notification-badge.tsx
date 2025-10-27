@@ -17,8 +17,17 @@ export function NotificationBadge({ count, icon, onPress, size = 24 }: Notificat
       size="$2"
       backgroundColor="transparent"
       padding="$2"
+      height="100%"
       onPress={onPress}
       position="relative"
+      hoverStyle={{
+        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+        transform: 'scale(1.02)',
+      }}
+      pressStyle={{
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        transform: 'scale(0.98)',
+      }}
     >
       <IconSymbol name={icon} size={size} color="$color" />
       <Badge count={count} />

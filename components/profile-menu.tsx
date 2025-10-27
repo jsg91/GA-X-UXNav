@@ -1,25 +1,24 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeContext } from '@/hooks/use-theme-context';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Modal
+  Modal
 } from 'react-native';
 import {
-    Button,
-    ScrollView,
-    View,
-    XStack,
-    YStack
+  Button,
+  ScrollView,
+  Text as TamaguiText,
+  View,
+  XStack,
+  YStack
 } from 'tamagui';
 
 export function ProfileMenu() {
   const [isVisible, setIsVisible] = useState(false);
-  const colorScheme = useColorScheme();
+  const { resolvedTheme } = useThemeContext();
 
   const handleLogout = () => {
     AlertUtils.showLogoutConfirmation(() => {
@@ -48,7 +47,16 @@ export function ProfileMenu() {
         backgroundColor="transparent"
         padding="$2"
         marginRight="$2"
+        height="100%"
         onPress={() => setIsVisible(true)}
+        hoverStyle={{
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          transform: 'scale(1.02)',
+        }}
+        pressStyle={{
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+          transform: 'scale(0.98)',
+        }}
       >
         <IconSymbol
           name="account"
@@ -77,8 +85,8 @@ export function ProfileMenu() {
           paddingRight={0}
           onPress={() => setIsVisible(false)}
         >
-          <ThemedView
-            onPress={(e) => e.stopPropagation()}
+          <View
+            onPress={(e: any) => e.stopPropagation()}
             width="70%"
             maxWidth={300}
             height="100%"
@@ -93,9 +101,9 @@ export function ProfileMenu() {
           >
             <YStack paddingHorizontal="$5" paddingTop="$5" paddingBottom="$5" borderBottomWidth="$0.5" borderBottomColor="$borderColor">
               <XStack justifyContent="space-between" alignItems="center">
-                <ThemedText type="subtitle">
+                <TamaguiText fontSize="$8" fontWeight="$5" color="$color">
                   Profile Menu
-                </ThemedText>
+                </TamaguiText>
                 <Button
                   size="$2"
                   backgroundColor="transparent"
@@ -138,9 +146,9 @@ export function ProfileMenu() {
                             size={20}
                             color="$color"
                           />
-                          <ThemedText flex={1}>
+                          <TamaguiText flex={1} color="$color" fontSize="$3.5" fontWeight="$4">
                             {item.name}
-                          </ThemedText>
+                          </TamaguiText>
                         </XStack>
                       </Link>
                     ) : (
@@ -148,20 +156,22 @@ export function ProfileMenu() {
                         <IconSymbol
                           name={item.icon as any}
                           size={20}
-                          color={item.id === 'logout' ? '#FF3B30' : '$color'}
+                          color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
                         />
-                        <ThemedText
+                        <TamaguiText
                           flex={1}
-                          color={item.id === 'logout' ? '#FF3B30' : '$color'}
+                          color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
+                          fontSize="$3.5"
+                          fontWeight="$4"
                         >
                           {item.name}
-                        </ThemedText>
+                        </TamaguiText>
                       </XStack>
                     )}
                   </Button>
                 ))}
             </ScrollView>
-          </ThemedView>
+          </View>
         </View>
       </Modal>
     </>

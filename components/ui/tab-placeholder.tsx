@@ -14,7 +14,7 @@ interface TabPlaceholderProps {
 export function TabPlaceholder({ icon, title, description }: TabPlaceholderProps) {
   return (
     <ThemedView style={styles.container}>
-      <IconSymbol name={icon} size={64} color="#666" />
+      <IconSymbol name={icon} size={64} color="#fff" />
       <ThemedText type="title" style={styles.title}>
         {title}
       </ThemedText>
