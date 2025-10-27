@@ -22,7 +22,7 @@ export function Badge({ count, maxCount = 9 }: BadgeProps) {
       alignItems="center"
       paddingHorizontal="$1"
     >
-      <Text color="white" fontSize="$1" fontWeight="$5">
+      <Text color="white" fontSize="$1" fontFamily="$sans" fontWeight="$5">
         {count > maxCount ? `${maxCount}+` : count.toString()}
       </Text>
     </View>

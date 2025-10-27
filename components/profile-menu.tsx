@@ -7,19 +7,19 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Modal
+    Modal
 } from 'react-native';
 import {
-  Button,
-  ScrollView,
-  XStack,
-  YStack
+    Button,
+    ScrollView,
+    View,
+    XStack,
+    YStack
 } from 'tamagui';
 
 export function ProfileMenu() {
   const [isVisible, setIsVisible] = useState(false);
   const colorScheme = useColorScheme();
-  const theme = colorScheme ?? 'light';
 
   const handleLogout = () => {
     AlertUtils.showLogoutConfirmation(() => {
@@ -64,16 +64,21 @@ export function ProfileMenu() {
         animationType="fade"
         onRequestClose={() => setIsVisible(false)}
       >
-        <Button
-          flex={1}
+        <View
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
           backgroundColor="rgba(0, 0, 0, 0.4)"
           justifyContent="flex-start"
           alignItems="flex-end"
           paddingTop="$12"
-          paddingRight="$4"
+          paddingRight={0}
           onPress={() => setIsVisible(false)}
         >
           <ThemedView
+            onPress={(e) => e.stopPropagation()}
             width="70%"
             maxWidth={300}
             height="100%"
@@ -84,6 +89,7 @@ export function ProfileMenu() {
             shadowOffset={{ width: -2, height: 0 }}
             shadowOpacity={0.25}
             shadowRadius={10}
+            marginLeft="auto"
           >
             <YStack paddingHorizontal="$5" paddingTop="$5" paddingBottom="$5" borderBottomWidth="$0.5" borderBottomColor="$borderColor">
               <XStack justifyContent="space-between" alignItems="center">
@@ -156,7 +162,7 @@ export function ProfileMenu() {
                 ))}
             </ScrollView>
           </ThemedView>
-        </Button>
+        </View>
       </Modal>
     </>
   );

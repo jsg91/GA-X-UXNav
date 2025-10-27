@@ -165,13 +165,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    fontFamily: 'Arial',
   },
   version: {
     fontSize: 16,
     opacity: 0.7,
     textAlign: 'center',
-    fontFamily: 'Arial',
   },
   section: {
     marginBottom: 30,
@@ -181,13 +179,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 15,
     color: '#333',
-    fontFamily: 'Arial',
   },
   description: {
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'left',
-    fontFamily: 'Arial',
   },
   featureList: {
     gap: 15,
@@ -200,14 +196,12 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 16,
     flex: 1,
-    fontFamily: 'Arial',
   },
   contactInfo: {
     fontSize: 16,
     lineHeight: 24,
     marginTop: 10,
     opacity: 0.8,
-    fontFamily: 'Arial',
   },
   footer: {
     alignItems: 'center',
@@ -219,7 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     opacity: 0.6,
-    fontFamily: 'Arial',
   },
 });
 

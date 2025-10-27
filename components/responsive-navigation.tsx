@@ -1,11 +1,12 @@
 import { usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, View, XStack } from 'tamagui';
 
 import { ProfileMenu } from '@/components/profile-menu';
 import { RoleSwitcher } from '@/components/role-switcher';
+import { SidebarNavigation } from '@/components/sidebar-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -25,10 +26,14 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const theme = colorScheme ?? 'light';
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
   const [notificationCount] = useState(3); // Mock notification count
   const [messageCount] = useState(2); // Mock message count
   const [currentRole, setCurrentRole] = useState<Role>(ROLE_CONFIG.roles[0]); // Default to Pilot
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
+  // Determine if we should show sidebar (large screens) or bottom nav (small screens)
+  const showSidebar = width >= SIDEBAR_BREAKPOINT;
 
   const handleNotificationPress = () => {
     AlertUtils.showNotification(notificationCount, 'notification');
@@ -67,7 +72,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         backgroundColor="transparent"
       />
 
-      {/* Header */}
+      {/* Header - Full width */}
       <View
         backgroundColor="$background"
         borderBottomWidth="$0.5"
@@ -136,6 +141,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
           alignItems="center"
           justifyContent="center"
           paddingHorizontal={156}
+          pointerEvents="none"
         >
           <ThemedText type="title" textAlign="center">
             GA-X
@@ -143,59 +149,77 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         </View>
       </View>
 
-      {/* Main Content */}
-      <View flex={1} paddingBottom={0}>
+      {/* Main Content Area - Full width with sidebar padding */}
+      <View
+        flex={1}
+        paddingBottom={0}
+        position="relative"
+        paddingLeft={showSidebar ? (sidebarExpanded ? 240 : 72) : 0}
+        animation="quick"
+        transition="padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+      >
+        {/* Sidebar Navigation - Overlays content on large screens */}
+        {showSidebar && (
+          <SidebarNavigation
+            onNavigate={handleTabPress}
+            onExpansionChange={setSidebarExpanded}
+          />
+        )}
+
+        {/* Main Content */}
         {children}
       </View>
 
-      {/* Bottom Tab Bar */}
-      <View
-        backgroundColor="$background"
-        flexDirection="row"
-        justifyContent="space-around"
-        alignItems="center"
-        paddingHorizontal="$4"
-        paddingVertical="$2"
-        borderTopWidth="$0.5"
-        borderTopColor="$borderColor"
-        shadowColor="$shadowColor"
-        shadowOffset={{ width: 0, height: -1 }}
-        shadowOpacity={0.1}
-        shadowRadius={2}
-      >
-        {NAVIGATION_CONFIG.tabBar.items
-          .filter(item => item.visible)
-          .map((item, index) => {
-            const isActive = getCurrentTabIndex() === index;
-            return (
-              <Button
-                key={item.id}
-                flex={1}
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                paddingVertical="$2"
-                minHeight={64}
-                gap="$1"
-                backgroundColor="transparent"
-                onPress={() => handleTabPress(item.href)}
-              >
-                <IconSymbol
-                  name={item.icon as any}
-                  size={24}
-                  color={isActive ? "$tint" : "$tabIconDefault"}
-                />
-                <ThemedText
-                  fontSize="$2"
-                  textAlign="center"
-                  color={isActive ? "$tint" : "$tabIconDefault"}
+      {/* Bottom Tab Bar - Only on small screens */}
+      {!showSidebar && (
+        <View
+          backgroundColor="$background"
+          flexDirection="row"
+          justifyContent="space-around"
+          alignItems="center"
+          paddingHorizontal="$4"
+          paddingVertical="$2"
+          borderTopWidth="$0.5"
+          borderTopColor="$borderColor"
+          shadowColor="$shadowColor"
+          shadowOffset={{ width: 0, height: -1 }}
+          shadowOpacity={0.1}
+          shadowRadius={2}
+        >
+          {NAVIGATION_CONFIG.tabBar.items
+            .filter(item => item.visible)
+            .map((item, index) => {
+              const isActive = getCurrentTabIndex() === index;
+              return (
+                <Button
+                  key={item.id}
+                  flex={1}
+                  flexDirection="column"
+                  alignItems="center"
+                  justifyContent="center"
+                  paddingVertical="$2"
+                  minHeight={64}
+                  gap="$1"
+                  backgroundColor="transparent"
+                  onPress={() => handleTabPress(item.href)}
                 >
-                  {item.name}
-                </ThemedText>
-              </Button>
-            );
-          })}
-      </View>
+                  <IconSymbol
+                    name={item.icon as any}
+                    size={24}
+                    color={isActive ? "$tint" : "$tabIconDefault"}
+                  />
+                  <ThemedText
+                    fontSize="$2"
+                    textAlign="center"
+                    color={isActive ? "$tint" : "$tabIconDefault"}
+                  >
+                    {item.name}
+                  </ThemedText>
+                </Button>
+              );
+            })}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

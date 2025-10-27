@@ -27,9 +27,9 @@ export const ROLE_CONFIG = {
     { id: 'flightschool-admin', name: 'Flight School Admin', icon: 'school', label: 'Flightschool-Admin', visible: true },
     { id: 'flightclub-admin', name: 'Flight Club Admin', icon: 'account-group', label: 'Flightclub-Admin', visible: true },
     { id: 'aerodrome-admin', name: 'Aerodrome Admin', icon: 'airport', label: 'Aerodrome-Admin', visible: true },
-    { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance (inventory, marketplace, + admin, permission based)', visible: true },
-    { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA (all together, permission based)', visible: true, permissionRequired: true },
-    { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs (all together, permission based)', visible: true, permissionRequired: true },
+    { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance', visible: true },
+    { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA', visible: true, permissionRequired: true },
+    { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs', visible: true, permissionRequired: true },
     { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', visible: true, permissionRequired: true },
   ] as const satisfies readonly Role[],
 };

@@ -3,7 +3,8 @@
  * This replaces the previous theme system with Tamagui tokens
  */
 
-import { createTamagui, createTokens } from 'tamagui';
+import { createAnimations } from '@tamagui/animations-react-native';
+import { createTamagui, createTokens, createFont } from 'tamagui';
 
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
@@ -129,6 +130,66 @@ export const tokens = createTokens({
   },
 });
 
+// Create font configuration for Arial
+const arialFont = createFont({
+  family: 'Arial, sans-serif',
+  size: {
+    1: 11,
+    2: 12,
+    3: 13,
+    4: 14,
+    5: 15,
+    6: 16,
+    7: 18,
+    8: 20,
+    9: 24,
+    10: 30,
+    11: 36,
+    12: 48,
+    true: 16,
+  },
+  lineHeight: {
+    1: 11,
+    2: 12,
+    3: 16,
+    4: 18,
+    5: 20,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
+    10: 42,
+    11: 48,
+    12: 60,
+    true: 24,
+  },
+  weight: {
+    1: '300',
+    2: '400',
+    3: '500',
+    4: '600',
+    5: '700',
+    6: '800',
+    7: '900',
+    true: '400',
+  },
+  letterSpacing: {
+    1: 0,
+    2: -0.5,
+    3: -1,
+    true: 0,
+  },
+  face: {
+    300: { normal: 'Arial' },
+    400: { normal: 'Arial' },
+    500: { normal: 'Arial' },
+    600: { normal: 'Arial' },
+    700: { normal: 'Arial' },
+    800: { normal: 'Arial' },
+    900: { normal: 'Arial' },
+  },
+});
+
 // Create themes
 export const lightTheme = {
   background: tokens.color.light_background,
@@ -168,6 +229,27 @@ export const darkTheme = {
   shadowColorFocus: tokens.color.dark_shadow,
 };
 
+// Create animations using react-native-reanimated
+const animations = createAnimations({
+  fast: {
+    type: 'spring',
+    damping: 20,
+    mass: 1.2,
+    stiffness: 250,
+  },
+  medium: {
+    type: 'spring',
+    damping: 10,
+    mass: 0.9,
+    stiffness: 100,
+  },
+  slow: {
+    type: 'spring',
+    damping: 20,
+    stiffness: 60,
+  },
+});
+
 // Create Tamagui config
 export const tamaguiConfig = createTamagui({
   tokens,
@@ -176,6 +258,12 @@ export const tamaguiConfig = createTamagui({
     dark: darkTheme,
   },
   defaultTheme: 'light',
+  animations,
+  fonts: {
+    heading: arialFont,
+    body: arialFont,
+    mono: arialFont,
+  },
   media: {
     xs: { maxWidth: 660 },
     sm: { minWidth: 660, maxWidth: 800 },
