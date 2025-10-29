@@ -20,6 +20,8 @@ export interface Role {
   label: string;
   visible: boolean;
   permissionRequired?: boolean;
+  navigation?: Record<string, any>;
+  context?: string;
 }
 
 // Hierarchical group structure
@@ -29,65 +31,529 @@ export interface RoleGroup {
   roles: Role[];
 }
 
+// ===== XUI SCHEMA TYPES =====
+// Context types that can be used in role navigation
+export type ContextName = 
+  | 'default'
+  | 'pilot'
+  | 'maintenance'
+  | 'flightclub_admin'
+  | 'flightschool_admin'
+  | 'aerodrome_admin'
+  | 'platform_admin'
+  | 'instructor';
+
+// Entity names used in the system
+export type EntityName =
+  | 'aircrafts'
+  | 'logbookentries'
+  | 'reservations'
+  | 'users'
+  | 'aerodromes'
+  | 'maintenance'
+  | 'events'
+  | 'organizations'
+  | 'documents'
+  | 'checklists'
+  | 'techlog';
+
+// Page configuration for a context
+export interface ContextPageConfig {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+}
+
+// Context configuration
+export interface ContextConfig {
+  pages?: {
+    list?: ContextPageConfig;
+    detail?: ContextPageConfig;
+    create?: ContextPageConfig;
+    edit?: ContextPageConfig;
+  };
+  [key: string]: any; // Allow additional context-specific properties
+}
+
+// Display information for an entity
+export interface EntityDisplay {
+  singular: string;
+  plural: string;
+  icon: string;
+  description: string;
+}
+
+// XUI Schema Definition for an entity
+export interface XUISchemaDefinition {
+  entityName: EntityName;
+  display: EntityDisplay;
+  contexts: Partial<Record<ContextName, ContextConfig>>;
+}
+
 export const ROLE_CONFIG = {
   groups: [
     {
       name: 'Flying & Training',
       icon: 'airplane-takeoff',
       roles: [
-        { id: 'pilot', name: 'Pilot', icon: 'airplane', label: 'Pilots', visible: true },
-        { id: 'instructor', name: 'Instructor', icon: 'school', label: 'Instructors', visible: true },
-        { id: 'ground-instructor', name: 'Ground Instructor', icon: 'teach', label: 'Ground Instructors', visible: true },
-        { id: 'student', name: 'Student', icon: 'account-school', label: 'Students', visible: true },
-        { id: 'passenger', name: 'Passenger', icon: 'seat-passenger', label: 'Passengers', visible: true },
-        { id: 'safety-officer', name: 'Safety Officer', icon: 'shield-alert', label: 'Safety Officers', visible: true },
-      ]
+        {
+          id: 'pilot',
+          name: 'Pilot',
+          icon: 'airplane',
+          label: 'Pilot',
+          visible: true,
+          navigation: {
+            aircrafts: {},
+            logbookentries: {},
+            reservations: {},
+            users: { label: 'Find Instructors', icon: 'school' },
+            aerodromes: {},
+            'route-planner': {
+              route: '/(tabs)/route-planner',
+              label: 'Route Planner',
+              icon: 'map',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'student',
+          name: 'Student',
+          icon: 'account-school',
+          label: 'Student',
+          visible: true,
+          context: 'pilot',  // Students use pilot context
+          navigation: {
+            logbookentries: {},
+            reservations: {},
+            users: { label: 'My Instructor', icon: 'school' },
+            training: {
+              route: '/(tabs)/training',
+              label: 'My Training',
+              icon: 'school',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'instructor',
+          name: 'Instructor',
+          icon: 'school',
+          label: 'Instructor',
+          visible: true,
+          navigation: {
+            users: { label: 'My Students', icon: 'account-school' },
+            reservations: {},
+            aircrafts: {},
+            logbookentries: {},
+          },
+        },
+        {
+          id: 'safety-officer',
+          name: 'Safety Officer',
+          icon: 'shield-alert',
+          label: 'Safety Officer',
+          visible: true,
+          context: 'default',
+          navigation: {
+            incidents: {
+              route: '/(tabs)/incidents',
+              label: 'Incidents',
+              icon: 'shield-alert',
+              customPage: true,
+            },
+            aircrafts: {},
+            'safety-reports': {
+              route: '/(tabs)/safety-reports',
+              label: 'Safety Reports',
+              icon: 'clipboard-alert',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'passenger',
+          name: 'Passenger',
+          icon: 'seat-passenger',
+          label: 'Passenger',
+          visible: true,
+          context: 'pilot',
+          navigation: {
+            reservations: { label: 'My Flights' },
+            aerodromes: {},
+          },
+        },
+      ],
     },
     {
       name: 'Administration',
       icon: 'office-building',
       roles: [
-        { id: 'flightclub-admin', name: 'Flight Club Admin', icon: 'account-group', label: 'Flightclub-Admin', visible: true },
-        { id: 'flightschool-admin', name: 'Flight School Admin', icon: 'school', label: 'Flightschool-Admin', visible: true },
-        { id: 'fbo-admin', name: 'FBO Admin', icon: 'airplane-landing', label: 'FBO-Admins', visible: true },
-        { id: 'aerodrome-admin', name: 'Aerodrome Admin', icon: 'airport', label: 'Aerodrome-Admin', visible: true },
-        { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance', visible: true },
-      ]
+        {
+          id: 'organization-admin',
+          name: 'Organization Admin',
+          icon: 'domain',
+          label: 'Organization',
+          visible: true,
+          context: 'platform_admin',
+          navigation: {
+            organizations: {},
+            members: {
+              route: '/(tabs)/members',
+              label: 'Members',
+              icon: 'account-group',
+              customPage: true,
+            },
+            events: {},
+            invoicing: {
+              route: '/(tabs)/invoicing',
+              label: 'Invoicing',
+              icon: 'receipt',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'flightschool-admin',
+          name: 'Flight School Admin',
+          icon: 'school',
+          label: 'Flightschool',
+          visible: true,
+          context: 'flightschool_admin',
+          navigation: {
+            users: { label: 'Students' },
+            instructors: {
+              route: '/(tabs)/instructors',
+              label: 'Instructors',
+              icon: 'school',
+              customPage: true,
+            },
+            aircrafts: {},
+            reservations: {},
+            courses: {
+              route: '/(tabs)/courses',
+              label: 'Courses',
+              icon: 'book-open-variant',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'flightclub-admin',
+          name: 'Flight Club Admin',
+          icon: 'account-group',
+          label: 'Flightclub',
+          visible: true,
+          context: 'flightclub_admin',
+          navigation: {
+            aircrafts: {},
+            members: {
+              route: '/(tabs)/members',
+              label: 'Members',
+              icon: 'account-group',
+              customPage: true,
+            },
+            reservations: {},
+            events: {},
+            invoicing: {
+              route: '/(tabs)/invoicing',
+              label: 'Invoicing',
+              icon: 'receipt',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'fbo-admin',
+          name: 'FBO Admin',
+          icon: 'airplane-landing',
+          label: 'FBO',
+          visible: true,
+          context: 'default',
+          navigation: {
+            aerodromes: {},
+            fuel: {
+              route: '/(tabs)/fuel',
+              label: 'Fuel Services',
+              icon: 'gas-station',
+              customPage: true,
+            },
+            services: {
+              route: '/(tabs)/services',
+              label: 'Services',
+              icon: 'room-service',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'aerodrome-admin',
+          name: 'Aerodrome Admin',
+          icon: 'airport',
+          label: 'Aerodrome',
+          visible: true,
+          context: 'aerodrome_admin',
+          navigation: {
+            aerodromes: {},
+            movements: {
+              route: '/(tabs)/movements',
+              label: 'Movements',
+              icon: 'airplane-takeoff',
+              customPage: true,
+            },
+            parking: {
+              route: '/(tabs)/parking',
+              label: 'Parking',
+              icon: 'parking',
+              customPage: true,
+            },
+            fuel: {
+              route: '/(tabs)/fuel',
+              label: 'Fuel',
+              icon: 'gas-station',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'maintenance',
+          name: 'Maintenance',
+          icon: 'wrench',
+          label: 'Maintenance',
+          visible: true,
+          navigation: {
+            aircrafts: {},
+            maintenance: {},
+            inspections: {
+              route: '/(tabs)/inspections',
+              label: 'Inspections',
+              icon: 'clipboard-check',
+              customPage: true,
+            },
+            parts: {
+              route: '/(tabs)/parts',
+              label: 'Parts',
+              icon: 'cog',
+              customPage: true,
+            },
+          },
+        },
+      ],
     },
     {
       name: 'Manufacturing & Inspection',
       icon: 'factory',
       roles: [
-        { id: 'builder', name: 'Experimental Builder', icon: 'hammer-wrench', label: 'Experimental Builders', visible: true },
-        { id: 'manufacturer', name: 'Manufacturer', icon: 'factory', label: 'Manufacturers', visible: true },
-        { id: 'systems-vendor', name: 'Systems Vendor', icon: 'chip', label: 'Systems Vendors', visible: true },
-        { id: 'consultant', name: 'Engineering Consultant', icon: 'account-tie', label: 'Engineering Consultants', visible: true },
-        { id: 'inspector', name: 'Inspector', icon: 'clipboard-search', label: 'Inspectors', visible: true },
-      ]
+        {
+          id: 'builder',
+          name: 'Experimental Builder',
+          icon: 'hammer-wrench',
+          label: 'Experimental Builder',
+          visible: true,
+          context: 'default',
+          navigation: {
+            'my-projects': {
+              route: '/(tabs)/my-projects',
+              label: 'My Projects',
+              icon: 'hammer-wrench',
+              customPage: true,
+            },
+            aircrafts: {},
+            'build-log': {
+              route: '/(tabs)/build-log',
+              label: 'Build Log',
+              icon: 'notebook',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'manufacturer',
+          name: 'Manufacturer',
+          icon: 'factory',
+          label: 'Manufacturing',
+          visible: true,
+          context: 'default',
+          navigation: {
+            products: {
+              route: '/(tabs)/products',
+              label: 'Products',
+              icon: 'factory',
+              customPage: true,
+            },
+            aircrafts: {},
+            orders: {
+              route: '/(tabs)/orders',
+              label: 'Orders',
+              icon: 'cart',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'inspector',
+          name: 'Inspector',
+          icon: 'clipboard-search',
+          label: 'Consultant / Inspector',
+          visible: true,
+          context: 'default',
+          navigation: {
+            inspections: {
+              route: '/(tabs)/inspections',
+              label: 'Inspections',
+              icon: 'clipboard-search',
+              customPage: true,
+            },
+            aircrafts: {},
+            reports: {
+              route: '/(tabs)/reports',
+              label: 'Reports',
+              icon: 'file-document',
+              customPage: true,
+            },
+          },
+        },
+      ],
     },
     {
       name: 'Certification',
       icon: 'certificate',
       roles: [
-        { id: 'dpe', name: 'Designated Pilot Examiner', icon: 'clipboard-check', label: 'DPEs', visible: true, permissionRequired: true },
-        { id: 'ame', name: 'Aviation Medical Examiner', icon: 'stethoscope', label: 'AMEs', visible: true, permissionRequired: true },
-      ]
+        {
+          id: 'dpe',
+          name: 'Designated Pilot Examiner',
+          icon: 'clipboard-check',
+          label: 'DPE',
+          visible: true,
+          permissionRequired: true,
+          context: 'default',
+          navigation: {
+            examinations: {
+              route: '/(tabs)/examinations',
+              label: 'Examinations',
+              icon: 'clipboard-check',
+              customPage: true,
+            },
+            candidates: {
+              route: '/(tabs)/candidates',
+              label: 'Candidates',
+              icon: 'account-multiple',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'ame',
+          name: 'Aviation Medical Examiner',
+          icon: 'stethoscope',
+          label: 'AME',
+          visible: true,
+          permissionRequired: true,
+          context: 'default',
+          navigation: {
+            'medical-exams': {
+              route: '/(tabs)/medical-exams',
+              label: 'Medical Exams',
+              icon: 'stethoscope',
+              customPage: true,
+            },
+            patients: {
+              route: '/(tabs)/patients',
+              label: 'Patients',
+              icon: 'account-heart',
+              customPage: true,
+            },
+          },
+        },
+      ],
     },
     {
       name: 'Insurance',
       icon: 'shield-account',
       roles: [
-        { id: 'insurance-broker', name: 'Insurance Broker', icon: 'shield-account', label: 'Insurance Brokers', visible: true },
-      ]
+        {
+          id: 'insurance-broker',
+          name: 'Insurance Broker',
+          icon: 'shield-account',
+          label: 'Insurance Broker',
+          visible: true,
+          permissionRequired: true,
+          context: 'default',
+          navigation: {
+            policies: {
+              route: '/(tabs)/policies',
+              label: 'Policies',
+              icon: 'shield-account',
+              customPage: true,
+            },
+            clients: {
+              route: '/(tabs)/clients',
+              label: 'Clients',
+              icon: 'account-multiple',
+              customPage: true,
+            },
+          },
+        },
+      ],
     },
     {
       name: 'Regulatory',
       icon: 'gavel',
       roles: [
-        { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA', visible: true, permissionRequired: true },
-        { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs', visible: true, permissionRequired: true },
-      ]
-    }
+        {
+          id: 'caa',
+          name: 'CAA',
+          icon: 'shield-check',
+          label: 'CAA',
+          visible: true,
+          permissionRequired: true,
+          navigation: {
+            aircrafts: {},
+            registrations: {
+              route: '/(tabs)/registrations',
+              label: 'Registrations',
+              icon: 'certificate',
+              customPage: true,
+            },
+            licenses: {
+              route: '/(tabs)/licenses',
+              label: 'Licenses',
+              icon: 'card-account-details',
+              customPage: true,
+            },
+            incidents: {
+              route: '/(tabs)/incidents',
+              label: 'Incidents',
+              icon: 'alert',
+              customPage: true,
+            },
+          },
+        },
+        {
+          id: 'customs',
+          name: 'Customs',
+          icon: 'passport',
+          label: 'Custom',
+          visible: true,
+          permissionRequired: true,
+          context: 'default',
+          navigation: {
+            declarations: {
+              route: '/(tabs)/declarations',
+              label: 'Declarations',
+              icon: 'passport',
+              customPage: true,
+            },
+            flights: {
+              route: '/(tabs)/flights',
+              label: 'International Flights',
+              icon: 'airplane',
+              customPage: true,
+            },
+          },
+        },
+      ],
+    },
   ] as const satisfies readonly RoleGroup[],
 
   // ===== STANDALONE ADMIN ROLE =====
@@ -139,8 +605,269 @@ export const ROLE_CONFIG = {
 
     return group.roles.filter(role => role.visible);
   },
+} as const;
 
-};
+// ===== XUI SCHEMA REGISTRY =====
+/**
+ * XUI Schema Registry - defines entity display and context-specific configurations
+ * This registry is used to generate navigation items and page configurations
+ * based on roles and contexts.
+ */
+export const XUISCHEMA_REGISTRY: Record<EntityName, XUISchemaDefinition> = {
+  // Aviation Entities
+  aircrafts: {
+    entityName: 'aircrafts',
+    display: {
+      singular: 'Aircraft',
+      plural: 'Aircrafts',
+      icon: 'airplane',
+      description: 'Manage your aircraft fleet',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'My Aircraft', subtitle: 'Your personal aircraft' },
+        },
+      },
+      maintenance: {
+        pages: {
+          list: { title: 'Aircraft Maintenance', subtitle: 'Maintenance tracking' },
+        },
+      },
+      flightclub_admin: {
+        pages: {
+          list: { title: 'Fleet Management', subtitle: 'Manage club aircraft' },
+        },
+      },
+    },
+  },
+
+  logbookentries: {
+    entityName: 'logbookentries',
+    display: {
+      singular: 'Logbook Entry',
+      plural: 'Logbook',
+      icon: 'book-open-variant',
+      description: 'Flight logbook entries',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'My Logbook', subtitle: 'Your flight history' },
+        },
+      },
+      instructor: {
+        pages: {
+          list: { title: 'Student Logbooks', subtitle: 'Track student progress' },
+        },
+      },
+    },
+  },
+
+  reservations: {
+    entityName: 'reservations',
+    display: {
+      singular: 'Reservation',
+      plural: 'Reservations',
+      icon: 'calendar-check',
+      description: 'Aircraft reservations and bookings',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'My Reservations', subtitle: 'Your upcoming flights' },
+        },
+      },
+      flightclub_admin: {
+        pages: {
+          list: { title: 'All Reservations', subtitle: 'Manage club bookings' },
+        },
+      },
+    },
+  },
+
+  users: {
+    entityName: 'users',
+    display: {
+      singular: 'User',
+      plural: 'Users',
+      icon: 'account',
+      description: 'User management',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'Instructors', subtitle: 'Find qualified instructors' },
+        },
+      },
+      instructor: {
+        pages: {
+          list: { title: 'My Students', subtitle: 'Track student progress' },
+        },
+      },
+      flightschool_admin: {
+        pages: {
+          list: { title: 'Students', subtitle: 'All enrolled students' },
+        },
+      },
+      platform_admin: {
+        pages: {
+          list: { title: 'All Users', subtitle: 'Platform user management' },
+        },
+      },
+    },
+  },
+
+  aerodromes: {
+    entityName: 'aerodromes',
+    display: {
+      singular: 'Aerodrome',
+      plural: 'Aerodromes',
+      icon: 'airport',
+      description: 'Airport and aerodrome information',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'Aerodromes', subtitle: 'Find airports and airfields' },
+        },
+      },
+      aerodrome_admin: {
+        pages: {
+          list: { title: 'Aerodrome Management', subtitle: 'Manage your aerodrome' },
+        },
+      },
+    },
+  },
+
+  maintenance: {
+    entityName: 'maintenance',
+    display: {
+      singular: 'Maintenance Record',
+      plural: 'Maintenance',
+      icon: 'wrench',
+      description: 'Aircraft maintenance records',
+    },
+    contexts: {
+      default: {},
+      maintenance: {
+        pages: {
+          list: { title: 'Maintenance Records', subtitle: 'Track aircraft maintenance' },
+        },
+      },
+      flightclub_admin: {
+        pages: {
+          list: { title: 'Fleet Maintenance', subtitle: 'Club aircraft maintenance' },
+        },
+      },
+    },
+  },
+
+  events: {
+    entityName: 'events',
+    display: {
+      singular: 'Event',
+      plural: 'Events',
+      icon: 'calendar-star',
+      description: 'Club events and activities',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'Events', subtitle: 'Upcoming club events' },
+        },
+      },
+      flightclub_admin: {
+        pages: {
+          list: { title: 'Event Management', subtitle: 'Organize club events' },
+        },
+      },
+    },
+  },
+
+  organizations: {
+    entityName: 'organizations',
+    display: {
+      singular: 'Organization',
+      plural: 'Organizations',
+      icon: 'domain',
+      description: 'Aviation organizations',
+    },
+    contexts: {
+      default: {},
+      platform_admin: {
+        pages: {
+          list: { title: 'Organizations', subtitle: 'Manage organizations' },
+        },
+      },
+    },
+  },
+
+  documents: {
+    entityName: 'documents',
+    display: {
+      singular: 'Document',
+      plural: 'Documents',
+      icon: 'file-document-multiple',
+      description: 'Aviation documents and files',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'My Documents', subtitle: 'Your aviation documents' },
+        },
+      },
+    },
+  },
+
+  checklists: {
+    entityName: 'checklists',
+    display: {
+      singular: 'Checklist',
+      plural: 'Checklists',
+      icon: 'clipboard-check-outline',
+      description: 'Flight checklists and procedures',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'Checklists', subtitle: 'Flight procedures' },
+        },
+      },
+    },
+  },
+
+  techlog: {
+    entityName: 'techlog',
+    display: {
+      singular: 'Tech Log Entry',
+      plural: 'Tech Log',
+      icon: 'notebook',
+      description: 'Technical log entries',
+    },
+    contexts: {
+      default: {},
+      pilot: {
+        pages: {
+          list: { title: 'Tech Log', subtitle: 'Aircraft technical log' },
+        },
+      },
+      maintenance: {
+        pages: {
+          list: { title: 'Technical Logs', subtitle: 'Review tech log entries' },
+        },
+      },
+    },
+  },
+} as const satisfies Record<EntityName, XUISchemaDefinition>;
 
 export const NAVIGATION_CONFIG = {
     // ===== APP STORE/FEATURE CATALOG =====

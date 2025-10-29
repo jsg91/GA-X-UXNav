@@ -14,22 +14,22 @@ interface NotificationBadgeProps {
 export function NotificationBadge({ count, icon, onPress, size = 24 }: NotificationBadgeProps) {
   return (
     <Button
-      size="$2"
-      backgroundColor="transparent"
-      padding="$2"
-      height="100%"
       onPress={onPress}
-      position="relative"
+      backgroundColor="transparent"
+      height="100%"
       hoverStyle={{
         backgroundColor: 'rgba(0, 0, 0, 0.05)',
         transform: 'scale(1.02)',
       }}
+      padding="$2"
+      position="relative"
       pressStyle={{
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
         transform: 'scale(0.98)',
       }}
+      size="$2"
     >
-      <IconSymbol name={icon} size={size} color="$color" />
+      <IconSymbol name={icon} color="$color" size={size} />
       <Badge count={count} />
     </Button>
   );

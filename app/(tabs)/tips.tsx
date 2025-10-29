@@ -14,25 +14,25 @@ export default function TipsScreen() {
     const keys = keyString.split(', ');
 
     return (
-      <XStack gap="$1" flexWrap="wrap">
+      <XStack flexWrap="wrap" gap="$1">
         {keys.map((key, index) => (
           <React.Fragment key={key}>
             <Button
-              size="$1"
+              disabled
               backgroundColor="$background"
-              borderWidth="$0.5"
               borderColor="$borderColor"
               borderRadius="$2"
+              borderWidth="$0.5"
               paddingHorizontal="$2"
               paddingVertical="$1"
-              disabled
+              size="$1"
             >
-              <ThemedText fontSize="$1" color="$color" style={{ fontFamily: 'monospace' }}>
+              <ThemedText style={{ fontFamily: 'monospace' }} color="$color" fontSize="$1">
                 {key}
               </ThemedText>
             </Button>
             {index < keys.length - 1 && (
-              <ThemedText fontSize="$1" color="$color" opacity={0.6}>
+              <ThemedText color="$color" fontSize="$1" opacity={0.6}>
                 or
               </ThemedText>
             )}
@@ -48,19 +48,19 @@ export default function TipsScreen() {
         <YStack gap="$6" paddingBottom="$8">
 
           {/* Header */}
-          <YStack gap="$2" alignItems="center">
-            <IconSymbol name="lightbulb" size={48} color="$tint" />
+          <YStack alignItems="center" gap="$2">
+            <IconSymbol name="lightbulb" color="$tint" size={48} />
             <ThemedText type="title">Tips & Shortcuts</ThemedText>
-            <ThemedText type="subtitle" textAlign="center" color="$color" opacity={0.8}>
+            <ThemedText color="$color" opacity={0.8} textAlign="center" type="subtitle">
               Master GA-X with keyboard shortcuts and AI assistance
             </ThemedText>
           </YStack>
 
           {/* AI Section */}
-          <YStack gap="$3" padding="$4" backgroundColor="$background" borderRadius="$4" borderWidth="$0.5" borderColor="$borderColor">
-            <XStack gap="$2" alignItems="center">
-              <IconSymbol name="brain" size={24} color="#007AFF" />
-              <ThemedText type="subtitle" fontWeight="600">AI Assistant</ThemedText>
+          <YStack backgroundColor="$background" borderColor="$borderColor" borderRadius="$4" borderWidth="$0.5" gap="$3" padding="$4">
+            <XStack alignItems="center" gap="$2">
+              <IconSymbol name="brain" color="#007AFF" size={24} />
+              <ThemedText fontWeight="600" type="subtitle">AI Assistant</ThemedText>
             </XStack>
 
             <ThemedText color="$color">
@@ -76,21 +76,21 @@ export default function TipsScreen() {
               <ThemedText color="$color">• Suggest fuel stops and alternatives based on aircraft performance</ThemedText>
             </YStack>
 
-            <ThemedText color="$color" opacity={0.8} fontSize="$2">
-              Press <ThemedText fontWeight="600" color="$tint">⌘J</ThemedText> or <ThemedText fontWeight="600" color="$tint">Shift+Space</ThemedText> to open AI Assistant
+            <ThemedText color="$color" fontSize="$2" opacity={0.8}>
+              Press <ThemedText color="$tint" fontWeight="600">⌘J</ThemedText> or <ThemedText color="$tint" fontWeight="600">Shift+Space</ThemedText> to open AI Assistant
             </ThemedText>
           </YStack>
 
           {/* Navigation Shortcuts */}
           <YStack gap="$3">
-            <XStack gap="$2" alignItems="center">
-              <IconSymbol name="keyboard" size={20} color="$color" />
-              <ThemedText type="subtitle" fontWeight="600">Navigation</ThemedText>
+            <XStack alignItems="center" gap="$2">
+              <IconSymbol name="keyboard" color="$color" size={20} />
+              <ThemedText fontWeight="600" type="subtitle">Navigation</ThemedText>
             </XStack>
 
             <YStack gap="$2">
               {Object.entries(hotkeys?.navigation || {}).map(([key, config]: [string, any]) => (
-                <XStack key={key} justifyContent="space-between" alignItems="center" padding="$2" backgroundColor="$background" borderRadius="$3">
+                <XStack key={key} alignItems="center" backgroundColor="$background" borderRadius="$3" justifyContent="space-between" padding="$2">
                   <ThemedText color="$color">{config?.description}</ThemedText>
                   {renderShortcutKey(config?.keys)}
                 </XStack>
@@ -100,14 +100,14 @@ export default function TipsScreen() {
 
           {/* Global Actions */}
           <YStack gap="$3">
-            <XStack gap="$2" alignItems="center">
-              <IconSymbol name="zap" size={20} color="$color" />
-              <ThemedText type="subtitle" fontWeight="600">Global Actions</ThemedText>
+            <XStack alignItems="center" gap="$2">
+              <IconSymbol name="zap" color="$color" size={20} />
+              <ThemedText fontWeight="600" type="subtitle">Global Actions</ThemedText>
             </XStack>
 
             <YStack gap="$2">
               {Object.entries(hotkeys?.actions || {}).map(([key, config]: [string, any]) => (
-                <XStack key={key} justifyContent="space-between" alignItems="center" padding="$2" backgroundColor="$background" borderRadius="$3">
+                <XStack key={key} alignItems="center" backgroundColor="$background" borderRadius="$3" justifyContent="space-between" padding="$2">
                   <ThemedText color="$color">{config?.description}</ThemedText>
                   {renderShortcutKey(config?.keys)}
                 </XStack>
@@ -117,23 +117,23 @@ export default function TipsScreen() {
 
           {/* Context-Aware Actions */}
           <YStack gap="$3">
-            <XStack gap="$2" alignItems="center">
-              <IconSymbol name="target" size={20} color="$color" />
-              <ThemedText type="subtitle" fontWeight="600">Context-Aware</ThemedText>
+            <XStack alignItems="center" gap="$2">
+              <IconSymbol name="target" color="$color" size={20} />
+              <ThemedText fontWeight="600" type="subtitle">Context-Aware</ThemedText>
             </XStack>
 
-            <ThemedText color="$color" opacity={0.8} fontSize="$2" paddingBottom="$2">
+            <ThemedText color="$color" fontSize="$2" opacity={0.8} paddingBottom="$2">
               These shortcuts change behavior based on your current page:
             </ThemedText>
 
             <YStack gap="$2">
               {Object.entries(hotkeys?.contextual || {}).map(([route, actions]: [string, any]) => (
-                <YStack key={route} gap="$1" padding="$2" backgroundColor="$background" borderRadius="$3">
-                  <ThemedText fontSize="$2" fontWeight="500" color="$tint">
+                <YStack key={route} backgroundColor="$background" borderRadius="$3" gap="$1" padding="$2">
+                  <ThemedText color="$tint" fontSize="$2" fontWeight="500">
                     {route.replace('/(tabs)/', '').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </ThemedText>
                   {Object.entries(actions || {}).map(([actionKey, actionConfig]: [string, any]) => (
-                    <XStack key={actionKey} justifyContent="space-between" alignItems="center" paddingLeft="$2">
+                    <XStack key={actionKey} alignItems="center" justifyContent="space-between" paddingLeft="$2">
                       <ThemedText color="$color" opacity={0.9}>{actionConfig?.description}</ThemedText>
                       {renderShortcutKey(hotkeys?.actions?.[actionKey]?.keys)}
                     </XStack>
@@ -144,18 +144,18 @@ export default function TipsScreen() {
           </YStack>
 
           {/* Pro Tips */}
-          <YStack gap="$3" padding="$4" backgroundColor="$background" borderRadius="$4" borderWidth="$0.5" borderColor="$borderColor">
-            <XStack gap="$2" alignItems="center">
-              <IconSymbol name="star" size={20} color="$tint" />
-              <ThemedText type="subtitle" fontWeight="600">Pro Tips</ThemedText>
+          <YStack backgroundColor="$background" borderColor="$borderColor" borderRadius="$4" borderWidth="$0.5" gap="$3" padding="$4">
+            <XStack alignItems="center" gap="$2">
+              <IconSymbol name="star" color="$tint" size={20} />
+              <ThemedText fontWeight="600" type="subtitle">Pro Tips</ThemedText>
             </XStack>
 
             <YStack gap="$2">
-              <ThemedText color="$color">• Use <ThemedText fontWeight="600" color="$tint">G+D</ThemedText> to quickly return to Dashboard from anywhere</ThemedText>
-              <ThemedText color="$color">• <ThemedText fontWeight="600" color="$tint">N</ThemedText> creates context-appropriate items (reservations, log entries, etc.)</ThemedText>
-              <ThemedText color="$color">• <ThemedText fontWeight="600" color="$tint">⌘K</ThemedText> focuses search to find anything instantly</ThemedText>
-              <ThemedText color="$color">• <ThemedText fontWeight="600" color="$tint">Shift+?</ThemedText> brings up this help anytime</ThemedText>
-              <ThemedText color="$color">• <ThemedText fontWeight="600" color="$tint">Esc</ThemedText> closes any modal or overlay</ThemedText>
+              <ThemedText color="$color">• Use <ThemedText color="$tint" fontWeight="600">G+D</ThemedText> to quickly return to Dashboard from anywhere</ThemedText>
+              <ThemedText color="$color">• <ThemedText color="$tint" fontWeight="600">N</ThemedText> creates context-appropriate items (reservations, log entries, etc.)</ThemedText>
+              <ThemedText color="$color">• <ThemedText color="$tint" fontWeight="600">⌘K</ThemedText> focuses search to find anything instantly</ThemedText>
+              <ThemedText color="$color">• <ThemedText color="$tint" fontWeight="600">Shift+?</ThemedText> brings up this help anytime</ThemedText>
+              <ThemedText color="$color">• <ThemedText color="$tint" fontWeight="600">Esc</ThemedText> closes any modal or overlay</ThemedText>
             </YStack>
           </YStack>
 

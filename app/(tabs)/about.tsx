@@ -16,10 +16,10 @@ export default function AboutScreen() {
         {/* Header Section */}
         <View style={styles.headerSection}>
           <IconSymbol
-            name="info"
-            size={80}
-            color={Colors[resolvedTheme].tint}
             style={styles.headerIcon}
+            name="info"
+            color={Colors[resolvedTheme].tint}
+            size={80}
           />
           <ThemedText type="title" style={styles.title}>
             About GA-X
@@ -49,56 +49,56 @@ export default function AboutScreen() {
 
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
-              <IconSymbol name="view-dashboard" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="view-dashboard" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Comprehensive Dashboard
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="calendar-check" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="calendar-check" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Reservation Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="airplane-edit" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="airplane-edit" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Aircraft Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="book" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="book" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Digital Logbook
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="wrench" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="wrench" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Maintenance Tracking
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="map" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="map" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Route Planning Tools
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="account-group" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="account-group" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Club Management
               </ThemedText>
             </View>
 
             <View style={styles.featureItem}>
-              <IconSymbol name="airport" size={24} color={Colors[resolvedTheme].tint} />
+              <IconSymbol name="airport" color={Colors[resolvedTheme].tint} size={24} />
               <ThemedText style={styles.featureText}>
                 Aerodrome Directory
               </ThemedText>

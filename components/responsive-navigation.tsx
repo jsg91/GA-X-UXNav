@@ -30,9 +30,20 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const { width } = useWindowDimensions();
   const [notificationCount] = useState(3); // Mock notification count
   const [messageCount] = useState(2); // Mock message count
-  const [currentRole, setCurrentRole] = useState<Role>(ROLE_CONFIG.getAllRoles()[0]); // Default to Pilot
+  // Get first visible role from groups (fallback if getAllRoles is not available)
+  const getFirstVisibleRole = (): Role => {
+    for (const group of ROLE_CONFIG.groups) {
+      const visibleRole = group.roles.find(role => role.visible);
+      if (visibleRole) return visibleRole;
+    }
+    // Fallback to first role if none visible (shouldn't happen)
+    return ROLE_CONFIG.groups[0]?.roles[0] || { id: 'pilot', name: 'Pilot', icon: 'airplane', label: 'Pilot', visible: true };
+  };
+  const [currentRole, setCurrentRole] = useState<Role>(getFirstVisibleRole()); // Default to first visible role
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [dimensionsReady, setDimensionsReady] = useState(false);
+  // Initialize dimensionsReady as true for mobile platforms to ensure bottom nav shows immediately
+  const [dimensionsReady, setDimensionsReady] = useState(Platform.OS !== 'web');
+  const [hasMeasuredDimensions, setHasMeasuredDimensions] = useState(false);
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
@@ -42,27 +53,50 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       // On web, assume large screen initially to prevent bottom nav flash
       setDimensionsReady(true);
 
-      // Add resize listener for responsive updates on web
-      const handleResize = () => {
-        // Force re-render to recalculate responsive layout
-        setDimensionsReady(true);
-      };
+      // Mark dimensions as measured once we have a width > 0
+      if (width > 0 && !hasMeasuredDimensions) {
+        setHasMeasuredDimensions(true);
+      }
 
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      // Add resize listener for responsive updates on web
+      // Only execute in real browser environment (check for both window.addEventListener and document)
+      const isWebBrowser = typeof window !== 'undefined' 
+        && typeof window.addEventListener === 'function'
+        && typeof document !== 'undefined';
+      
+      if (isWebBrowser) {
+        const handleResize = () => {
+          // Force re-render to recalculate responsive layout
+          setDimensionsReady(true);
+          setHasMeasuredDimensions(true);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+          if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+            window.removeEventListener('resize', handleResize);
+          }
+        };
+      }
     } else {
       // On mobile, wait for actual dimensions
       setDimensionsReady(true);
+      if (width > 0) {
+        setHasMeasuredDimensions(true);
+      }
     }
-  }, []);
+  }, [width, hasMeasuredDimensions]);
 
   // Determine if we should show sidebar (large screens) or bottom nav (small screens)
   // On web, default to showing sidebar to prevent bottom nav flash, but still respect actual screen size
   const showSidebar = Platform.OS === 'web'
-    ? (dimensionsReady ? width >= SIDEBAR_BREAKPOINT : true)  // Assume sidebar on web initially
+    ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Assume sidebar on web initially until dimensions are measured
     : (dimensionsReady && width >= SIDEBAR_BREAKPOINT);  // Only show sidebar on mobile if dimensions confirm large screen
 
-  // Sidebar space is reserved when dimensions are ready and sidebar should be shown
+  // For web, reserve sidebar space immediately to prevent layout shift
+  const shouldReserveSidebarSpace = Platform.OS === 'web'
+    ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Reserve space immediately on web
+    : (dimensionsReady && showSidebar);  // Only reserve on mobile when confirmed
 
   // Debug logging for development
   if (__DEV__) {
@@ -96,6 +130,13 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
     console.log('Searching for:', query);
     // TODO: Implement global search functionality
     // Could search across aircraft, aerodromes, documents, etc.
+  };
+
+  const handleSearchResultSelect = (result: any) => {
+    console.log('Search result selected:', result);
+    if (result.href) {
+      router.push(result.href as any);
+    }
   };
 
   // Hotkey handlers
@@ -159,52 +200,52 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <StatusBar
-        barStyle={resolvedTheme === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor="transparent"
+        barStyle={resolvedTheme === 'dark' ? 'light-content' : 'dark-content'}
       />
 
       {/* Help Overlay */}
       {showHelpOverlay && (
         <View
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          backgroundColor="rgba(0, 0, 0, 0.5)"
           alignItems="center"
+          backgroundColor="rgba(0, 0, 0, 0.5)"
+          bottom={0}
           justifyContent="center"
+          left={0}
+          position="absolute"
+          right={0}
+          top={0}
           zIndex={9999}
         >
           <View
             backgroundColor="$background"
             borderRadius="$4"
-            padding="$6"
             margin="$4"
             maxWidth={400}
+            padding="$6"
             shadowColor="$shadowColor"
             shadowOffset={{ width: 0, height: 10 }}
             shadowOpacity={0.25}
             shadowRadius={10}
           >
-            <ThemedText type="title" textAlign="center" marginBottom="$4">
+            <ThemedText marginBottom="$4" textAlign="center" type="title">
               Keyboard Shortcuts
             </ThemedText>
 
             <YStack gap="$3" marginBottom="$4">
               {Object.entries((NAVIGATION_CONFIG as any).hotkeys?.navigation || {}).map(([key, config]: [string, any]) => (
-                <XStack key={key} justifyContent="space-between" alignItems="center">
+                <XStack key={key} alignItems="center" justifyContent="space-between">
                   <ThemedText color="$color">{config?.description}</ThemedText>
-                  <ThemedText fontSize="$2" backgroundColor="$background" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" style={{ fontFamily: 'monospace' }}>
+                  <ThemedText style={{ fontFamily: 'monospace' }} backgroundColor="$background" borderRadius="$2" fontSize="$2" paddingHorizontal="$2" paddingVertical="$1">
                     {config?.keys?.toUpperCase()}
                   </ThemedText>
                 </XStack>
               ))}
 
               {Object.entries((NAVIGATION_CONFIG as any).hotkeys?.actions || {}).map(([key, config]: [string, any]) => (
-                <XStack key={key} justifyContent="space-between" alignItems="center">
+                <XStack key={key} alignItems="center" justifyContent="space-between">
                   <ThemedText color="$color">{config?.description}</ThemedText>
-                  <ThemedText fontSize="$2" backgroundColor="$background" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" style={{ fontFamily: 'monospace' }}>
+                  <ThemedText style={{ fontFamily: 'monospace' }} backgroundColor="$background" borderRadius="$2" fontSize="$2" paddingHorizontal="$2" paddingVertical="$1">
                     {config?.keys?.toUpperCase()}
                   </ThemedText>
                 </XStack>
@@ -221,43 +262,43 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       {/* AI Assistant Modal */}
       {isAIModalOpen && (
         <View
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          backgroundColor="rgba(0, 0, 0, 0.5)"
           alignItems="center"
+          backgroundColor="rgba(0, 0, 0, 0.5)"
+          bottom={0}
           justifyContent="center"
+          left={0}
+          position="absolute"
+          right={0}
+          top={0}
           zIndex={9998}
         >
           <View
             backgroundColor="$background"
             borderRadius="$4"
-            padding="$6"
             margin="$4"
-            width="90%"
-            maxWidth={600}
             maxHeight="80%"
+            maxWidth={600}
+            padding="$6"
             shadowColor="$shadowColor"
             shadowOffset={{ width: 0, height: 10 }}
             shadowOpacity={0.25}
             shadowRadius={10}
+            width="90%"
           >
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
+            <XStack alignItems="center" justifyContent="space-between" marginBottom="$4">
               <ThemedText type="title">GA-X AI Assistant</ThemedText>
               <Button size="$2" onPress={() => setIsAIModalOpen(false)}>
                 <IconSymbol name="close" size={16} />
               </Button>
             </XStack>
 
-            <ThemedText color="$color" opacity={0.8} marginBottom="$4">
+            <ThemedText color="$color" marginBottom="$4" opacity={0.8}>
               AI capabilities coming soon! This will provide intelligent assistance for flight planning,
               maintenance scheduling, document analysis, and more.
             </ThemedText>
 
-            <YStack gap="$2" flex={1}>
-              <ThemedText fontSize="$3" fontWeight="600" color="$tint">What AI can do:</ThemedText>
+            <YStack flex={1} gap="$2">
+              <ThemedText color="$tint" fontSize="$3" fontWeight="600">What AI can do:</ThemedText>
               <ThemedText color="$color">• Analyze flight patterns and suggest optimizations</ThemedText>
               <ThemedText color="$color">• Predict maintenance needs based on usage data</ThemedText>
               <ThemedText color="$color">• Generate flight plans considering weather and regulations</ThemedText>
@@ -270,8 +311,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       {/* Header - Full width */}
       <View
         backgroundColor="$background"
-        borderBottomWidth="$0.5"
         borderBottomColor="$borderColor"
+        borderBottomWidth="$0.5"
         position="relative"
         shadowColor="$shadowColor"
         shadowOffset={{ width: 0, height: 1 }}
@@ -280,74 +321,67 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       >
         <XStack
           alignItems="center"
-          justifyContent="space-between"
-          paddingHorizontal={0}
-          paddingVertical={0}
-          minHeight={56}
           height="100%"
+          justifyContent="space-between"
+          minHeight={56}
+          paddingHorizontal="$3"
+          paddingVertical={0}
           position="relative"
         >
-          {/* Left section - RoleSwitcher and News icon */}
+          {/* Left section - RoleSwitcher, News icon, and Search bar */}
           <XStack
-            width={120}
-            height="100%"
             alignItems="center"
+            flex={1}
+            gap="$3"
+            height="100%"
             justifyContent="flex-start"
-            gap="$2"
           >
             <RoleSwitcher
               currentRole={currentRole}
               onRoleChange={handleRoleChange}
             />
+            
             {/* News icon - only on big screens */}
-            {dimensionsReady && showSidebar && (
+            {(Platform.OS === 'web' || (dimensionsReady && showSidebar)) && (
               <Button
-                size="$2"
-                backgroundColor="transparent"
-                padding="$2"
-                height="100%"
                 onPress={AlertUtils.showAviationUpdates}
-                hoverStyle={Platform.OS === 'web' ? {
-                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                  transform: 'scale(1.02)',
-                } : {
+                backgroundColor="transparent"
+                height="100%"
+                hoverStyle={{
                   backgroundColor: 'rgba(0, 0, 0, 0.05)',
                   transform: 'scale(1.02)',
                 }}
+                padding="$2"
                 pressStyle={{
                   backgroundColor: 'rgba(0, 0, 0, 0.1)',
                   transform: 'scale(0.98)',
                 }}
+                size="$2"
               >
                 <IconSymbol
                   name="newspaper"
-                  size={20}
                   color="$color"
+                  size={24}
                 />
               </Button>
             )}
+
+            {/* Search bar - only on big screens */}
+            {(Platform.OS === 'web' || (dimensionsReady && showSidebar)) && (
+              <SearchBar
+                onResultSelect={handleSearchResultSelect}
+                onSearch={handleSearch}
+                width={210}
+              />
+            )}
           </XStack>
 
-          {/* Search bar - only on big screens */}
-          {dimensionsReady && showSidebar && (
-            <XStack height="100%" alignItems="center">
-              <SearchBar
-                onSearch={handleSearch}
-                width={300}
-              />
-            </XStack>
-          )}
-
-          {/* GA-X title - centered on full header width */}
+          {/* GA-X title - DEAD CENTER using absolute positioning */}
           <Button
-            position="absolute"
-            left={0}
-            right={0}
-            top={0}
-            bottom={0}
-            alignItems="center"
-            justifyContent="center"
-            backgroundColor="transparent"
+            style={Platform.OS === 'web' ? { 
+              cursor: 'pointer',
+              transform: 'translateX(-50%)'
+            } : {}}
             onPress={() => {
               // Navigate to home page only if not already there
               if (pathname !== '/') {
@@ -358,91 +392,97 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                 setSidebarExpanded(false);
               }
             }}
-            hoverStyle={Platform.OS === 'web' ? {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
-              transform: 'scale(1.02)',
-              cursor: 'pointer',
-            } : {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
-              transform: 'scale(1.02)',
-            }}
-            pressStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              transform: 'scale(0.98)',
-            }}
-            style={Platform.OS === 'web' ? { cursor: 'pointer' } : {}}
             accessibilityLabel="Navigate to home page"
             accessibilityRole="button"
-          >
-          <ThemedText
-            type="title"
-            textAlign="center"
-            color={pathname === '/' ? "$tint" : "$color"}
-            style={{
-              userSelect: 'none',
+            backgroundColor="transparent"
+            bottom={0}
+            height="100%"
+            hoverStyle={Platform.OS === 'web' ? {
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              transform: 'translateX(-50%)',
+            } : {
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
             }}
+            left="50%"
+            marginVertical="$1"
+            position="absolute"
+            pressStyle={{
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            }}
+            top={0}
           >
-            GA-X
-          </ThemedText>
+            <ThemedText
+              style={{
+                userSelect: 'none',
+              }}
+              color={pathname === '/' ? "$tint" : "$color"}
+              textAlign="center"
+              type="title"
+            >
+              GA-X
+            </ThemedText>
           </Button>
 
-
           {/* Right section - notifications and profile */}
-          <View width={70} height="100%" alignItems="flex-end" justifyContent="center">
-            <XStack height="100%" alignItems="center" gap="$2">
-              {/* Messages Icon */}
-              <NotificationBadge
-                count={messageCount}
-                icon="message-text"
-                onPress={handleMessagePress}
-              />
+          <XStack 
+            alignItems="center"
+            flex={1} 
+            gap="$2" 
+            height="100%" 
+            justifyContent="flex-end"
+          >
+            {/* Messages Icon */}
+            <NotificationBadge
+              count={messageCount}
+              icon="message-text"
+              onPress={handleMessagePress}
+            />
 
-              {/* Notification Bell Icon */}
-              <NotificationBadge
-                count={notificationCount}
-                icon="bell"
-                onPress={handleNotificationPress}
-              />
+            {/* Notification Bell Icon */}
+            <NotificationBadge
+              count={notificationCount}
+              icon="bell"
+              onPress={handleNotificationPress}
+            />
 
-              {/* Profile Menu */}
-              <ProfileMenu />
-            </XStack>
-          </View>
+            {/* Profile Menu */}
+            <ProfileMenu />
+          </XStack>
         </XStack>
       </View>
 
       {/* Sidebar Backdrop - Click to collapse */}
       {dimensionsReady && showSidebar && sidebarExpanded && (
         <View
-          position="absolute"
-          left={72}
-          top={0}
-          bottom={0}
-          right={0}
-          backgroundColor="rgba(0, 0, 0, 0.1)"
-          zIndex={999}
           onPress={() => setSidebarExpanded(false)}
           animation="quick"
+          backgroundColor="rgba(0, 0, 0, 0.1)"
+          bottom={0}
+          left={72}
           opacity={sidebarExpanded ? 1 : 0}
           pointerEvents={sidebarExpanded ? "auto" : "none"}
+          position="absolute"
+          right={0}
+          top={0}
           transition="opacity 0.2s ease-in-out"
+          zIndex={999}
         />
       )}
 
       {/* Main Content Area - Fixed padding reserved immediately on web */}
       <View
+        animation="quick"
         flex={1}
         paddingBottom={0}
+        paddingLeft={shouldReserveSidebarSpace ? 72 : 0}
         position="relative"
-        paddingLeft={dimensionsReady && showSidebar ? 72 : 0}
-        animation="quick"
         transition="padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       >
         {/* Sidebar Navigation - Overlays content on large screens */}
-        {dimensionsReady && showSidebar && (
+        {shouldReserveSidebarSpace && (
           <SidebarNavigation
-            onNavigate={handleTabPress}
             onExpansionChange={setSidebarExpanded}
+            onNavigate={handleTabPress}
           />
         )}
 
@@ -453,14 +493,14 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       {/* Bottom Tab Bar - Only on small screens */}
       {dimensionsReady && !showSidebar && (
         <View
+          alignItems="center"
           backgroundColor="$background"
+          borderTopColor="$borderColor"
+          borderTopWidth="$0.5"
           flexDirection="row"
           justifyContent="space-around"
-          alignItems="center"
           paddingHorizontal="$4"
           paddingVertical="$2"
-          borderTopWidth="$0.5"
-          borderTopColor="$borderColor"
           shadowColor="$shadowColor"
           shadowOffset={{ width: 0, height: -1 }}
           shadowOpacity={0.1}
@@ -473,31 +513,31 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               return (
                 <Button
                   key={item.id}
-                  flex={1}
-                  flexDirection="column"
-                  alignItems="center"
-                  justifyContent="center"
-                  paddingVertical="$2"
-                  minHeight={64}
-                  gap="$0.5"
-                  backgroundColor="transparent"
-                  onPress={() => handleTabPress(item.href)}
                   style={{
                     userSelect: 'none',
                   }}
+                  onPress={() => handleTabPress(item.href)}
+                  alignItems="center"
+                  backgroundColor="transparent"
+                  flex={1}
+                  flexDirection="column"
+                  gap="$0.5"
+                  justifyContent="center"
+                  minHeight={64}
+                  paddingVertical="$2"
                 >
                   <IconSymbol
                     name={item.icon as any}
-                    size={24}
                     color={isActive ? "$tint" : "$tabIconDefault"}
+                    size={24}
                   />
                   <ThemedText
-                    fontSize="$2"
-                    textAlign="center"
-                    color={isActive ? "$tint" : "$tabIconDefault"}
                     style={{
                       userSelect: 'none',
                     }}
+                    color={isActive ? "$tint" : "$tabIconDefault"}
+                    fontSize="$2"
+                    textAlign="center"
                   >
                     {item.name}
                   </ThemedText>

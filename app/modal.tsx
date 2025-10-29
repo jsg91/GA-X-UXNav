@@ -8,7 +8,7 @@ export default function ModalScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">GA-X</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
+      <Link style={styles.link} dismissTo href="/">
         <ThemedText type="link">Go to home screen</ThemedText>
       </Link>
     </ThemedView>

@@ -17,24 +17,24 @@ export function Badge({ count, maxCount = 9 }: BadgeProps) {
 
   return (
     <View
-      position="absolute"
-      top={2}
-      right={2}
-      minWidth={badgeSize}
-      height={badgeSize}
-      borderRadius={badgeSize / 2}
+      alignItems="center"
       backgroundColor="#FF3B30"
-      borderWidth={1.5}
       borderColor="rgba(255, 255, 255, 0.3)"
+      borderRadius={badgeSize / 2}
+      borderWidth={1.5}
+      height={badgeSize}
+      justifyContent="center"
+      minWidth={badgeSize}
+      paddingHorizontal={isLongCount ? "$1.5" : "$1"}
+      position="absolute"
+      right={2}
       shadowColor="rgba(0, 0, 0, 0.3)"
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.8}
       shadowRadius={2}
-      justifyContent="center"
-      alignItems="center"
-      paddingHorizontal={isLongCount ? "$1.5" : "$1"}
+      top={2}
     >
-      <Text color="white" fontSize={fontSize} fontFamily="$body" fontWeight="$6">
+      <Text color="white" fontFamily="$body" fontSize={fontSize} fontWeight="$6">
         {countText}
       </Text>
     </View>

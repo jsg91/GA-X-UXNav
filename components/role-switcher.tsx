@@ -2,9 +2,12 @@ import { ThemedText } from '@/components/themed-text';
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Modal, Platform, useWindowDimensions } from 'react-native';
 import {
   Button,
+  ScrollView,
+  View,
   XStack,
   YStack
 } from 'tamagui';
@@ -16,7 +19,14 @@ interface RoleSwitcherProps {
 
 export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { height: windowHeight } = useWindowDimensions();
+  const isWeb = Platform.OS === 'web';
+  
+  // Header height - matches the header minHeight in responsive-navigation
+  const HEADER_HEIGHT = 56;
+  // Header padding ($3) - matches paddingHorizontal in responsive-navigation header
+  const HEADER_PADDING = 12; // $3 = 12px
+  const maxPanelHeight = windowHeight > 0 ? windowHeight - HEADER_HEIGHT - 20 : 600;
 
   const groupedRoles = useMemo(() => {
     return ROLE_CONFIG.groups.map(group => ({
@@ -25,196 +35,213 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
     })).filter(group => group.roles.length > 0);
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
   const handleRoleSelect = (role: Role) => {
-    console.log('RoleSwitcher: handleRoleSelect called with role:', role);
-
     // Check if role requires permission
     if ('permissionRequired' in role && role.permissionRequired === true) {
-      console.log('RoleSwitcher: role requires permission');
       AlertUtils.showPermissionRequired(role.name);
       setIsOpen(false);
       return;
     }
 
-    console.log('RoleSwitcher: changing role to:', role);
     onRoleChange(role);
     setIsOpen(false);
   };
 
-  return (
-    <YStack position="relative" zIndex={1000} ref={dropdownRef}>
-      <Button
-        size="$2"
-        backgroundColor="rgba(0, 122, 255, 0.1)"
-        borderWidth="$0.5"
-        borderColor="rgba(0, 122, 255, 0.3)"
-        borderRadius="$3"
-        paddingHorizontal="$3"
-        paddingVertical="$2.5"
-        hoverStyle={{
-          backgroundColor: 'rgba(0, 122, 255, 0.15)',
-          borderColor: 'rgba(0, 122, 255, 0.5)',
-        }}
-        pressStyle={{
-          backgroundColor: 'rgba(0, 122, 255, 0.2)',
-        }}
-        onPress={() => {
-          console.log('RoleSwitcher: trigger pressed, toggling dropdown');
-          setIsOpen(!isOpen);
-        }}
+  const renderDropdownContent = () => (
+    <>
+      <YStack 
+        borderBottomColor="$borderColor" 
+        borderBottomWidth="$0.5"
+        padding="$4"
+        paddingBottom="$3"
       >
-        <XStack alignItems="center" gap="$1.5">
-          <IconSymbol
-            name={currentRole.icon as any}
-            size={20}
-            color="$tint"
-          />
-          <ThemedText fontSize="$3" color="$tint">
-            {currentRole.label}
+        <XStack justifyContent="space-between">
+          <ThemedText color="$color" fontSize="$5" fontWeight="$6">
+            User Context
           </ThemedText>
-          <IconSymbol
-            name={isOpen ? "chevron-up" : "chevron-down"}
-            size={16}
-            color="$tint"
-          />
-        </XStack>
-      </Button>
-
-      {isOpen && (
-        <YStack
-          position="absolute"
-          top="100%"
-          left={0}
-          marginTop="$2"
-          minWidth={360}
-          maxWidth={420}
-          backgroundColor="$background"
-          borderRadius="$4"
-          borderWidth="$1"
-          borderColor="$borderColor"
-          shadowColor="$shadowColor"
-          shadowOffset={{ width: 0, height: 4 }}
-          shadowOpacity={0.15}
-          shadowRadius={8}
-          zIndex={1001}
-          maxHeight="calc(100vh - 120px)"
-        >
-          <YStack 
-            padding="$4" 
-            paddingBottom="$3"
-            borderBottomWidth="$0.5"
-            borderBottomColor="$borderColor"
+          <Button
+            onPress={() => setIsOpen(false)}
+            backgroundColor="transparent"
+            padding="$1"
+            size="$2"
           >
-            <ThemedText fontSize="$5" fontWeight="$6" color="$color">
-              Switch Role
-            </ThemedText>
-          </YStack>
+            <IconSymbol
+              name="close"
+              color="$color"
+              size={20}
+            />
+          </Button>
+        </XStack>
+      </YStack>
 
-          {groupedRoles.map((group, groupIndex) => (
-            <YStack key={group.name}>
-              {/* Group Header - Tree Parent Node */}
-              <YStack
-                paddingVertical="$2.5"
-                paddingHorizontal="$4"
-                backgroundColor="rgba(0, 0, 0, 0.02)"
-                borderTopWidth={groupIndex > 0 ? "$0.5" : 0}
-                borderTopColor="rgba(0, 0, 0, 0.08)"
-              >
-                <XStack alignItems="center" gap="$2.5">
-                  <IconSymbol
-                    name="chevron-down"
-                    size={16}
-                    color="$color"
-                    style={{ opacity: 0.5 }}
-                  />
-                  <IconSymbol
-                    name={group.icon as any}
-                    size={18}
-                    color="$color"
-                  />
-                  <ThemedText fontSize="$4" fontWeight="$7" color="$color" style={{ opacity: 0.8 }}>
-                    {group.name}
-                  </ThemedText>
-                </XStack>
-              </YStack>
-
-              {/* Group Roles - Tree Child Nodes */}
-              {group.roles.map((role, roleIndex) => {
-                const isLastInGroup = roleIndex === group.roles.length - 1;
-
-                return (
-                  <Button
-                    key={role.id}
-                    backgroundColor="transparent"
-                    padding="$3"
-                    paddingVertical="$3"
-                    paddingLeft="$6"
-                    borderBottomWidth={0}
-                    borderRadius={0}
-                    hoverStyle={{
-                      backgroundColor: 'rgba(0, 122, 255, 0.08)',
-                    }}
-                    pressStyle={{
-                      backgroundColor: 'rgba(0, 122, 255, 0.12)',
-                    }}
-                    onPress={() => handleRoleSelect(role)}
-                  >
-                    <XStack alignItems="center" gap="$3" flex={1}>
-                      <IconSymbol
-                        name={role.icon as any}
-                        size={18}
-                        color={currentRole.id === role.id ? '$tint' : '$color'}
-                        style={{ opacity: currentRole.id === role.id ? 1 : 0.7 }}
-                      />
-                      <ThemedText
-                        flex={1}
-                        fontSize="$4"
-                        color={currentRole.id === role.id ? '$tint' : '$color'}
-                        fontWeight={currentRole.id === role.id ? '$6' : '$4'}
-                      >
-                        {role.label}
-                      </ThemedText>
-                      {'permissionRequired' in role && role.permissionRequired === true && (
-                        <IconSymbol
-                          name="lock"
-                          size={14}
-                          color="$tabIconDefault"
-                          style={{ opacity: 0.6 }}
-                        />
-                      )}
-                      {currentRole.id === role.id && (
-                        <IconSymbol
-                          name="check"
-                          size={16}
-                          color="$tint"
-                        />
-                      )}
-                    </XStack>
-                  </Button>
-                );
-              })}
+      <ScrollView 
+        flex={1} 
+        showsVerticalScrollIndicator={false}
+      >
+        {groupedRoles.map((group, groupIndex) => (
+          <YStack key={group.name}>
+            {/* Group Header - Tree Parent Node */}
+            <YStack
+              backgroundColor="rgba(0, 0, 0, 0.02)"
+              borderTopColor="rgba(0, 0, 0, 0.08)"
+              borderTopWidth={groupIndex > 0 ? "$0.5" : 0}
+              paddingHorizontal="$4"
+              paddingVertical="$2.5"
+            >
+              <XStack alignItems="center" gap="$2.5">
+                <IconSymbol
+                  style={{ opacity: 0.5 }}
+                  name="chevron-down"
+                  color="$color"
+                  size={16}
+                />
+                <IconSymbol
+                  name={group.icon as any}
+                  color="$color"
+                  size={18}
+                />
+                <ThemedText style={{ opacity: 0.8 }} color="$color" fontSize="$4" fontWeight="$7" marginLeft="$1">
+                  {group.name}
+                </ThemedText>
+              </XStack>
             </YStack>
-          ))}
-        </YStack>
-      )}
-    </YStack>
+
+            {/* Group Roles - Tree Child Nodes */}
+            {group.roles.map((role) => (
+              <Button
+                key={role.id}
+                onPress={() => handleRoleSelect(role)}
+                backgroundColor="transparent"
+                borderBottomWidth={0}
+                borderRadius={0}
+                hoverStyle={isWeb ? {
+                  backgroundColor: 'rgba(0, 122, 255, 0.08)',
+                } : undefined}
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                pressStyle={{
+                  backgroundColor: 'rgba(0, 122, 255, 0.12)',
+                }}
+              >
+                <XStack alignItems="center" gap="$3" justifyContent="flex-start" width="100%">
+                  {/* Spacer to align role icons with group icons: chevron (16px) + gap ($2.5 = 10px) = 26px */}
+                  <XStack width={10} />
+                  <IconSymbol
+                    style={{ opacity: currentRole.id === role.id ? 1 : 0.7 }}
+                    name={role.icon as any}
+                    color={currentRole.id === role.id ? '$tint' : '$color'}
+                    size={18}
+                  />
+                  <ThemedText
+                    color={currentRole.id === role.id ? '$tint' : '$color'}
+                    flex={1}
+                    textAlign="left"
+                    fontSize="$4"
+                    fontWeight={currentRole.id === role.id ? '$6' : '$4'}
+                  >
+                    {role.label}
+                  </ThemedText>
+                  {'permissionRequired' in role && role.permissionRequired === true && (
+                    <IconSymbol
+                      style={{ opacity: 0.6 }}
+                      name="lock"
+                      color="$tabIconDefault"
+                      size={14}
+                    />
+                  )}
+                  {currentRole.id === role.id && (
+                    <IconSymbol
+                      name="check"
+                      color="$tint"
+                      size={16}
+                    />
+                  )}
+                </XStack>
+              </Button>
+            ))}
+          </YStack>
+        ))}
+      </ScrollView>
+    </>
+  );
+
+  return (
+    <>
+      <YStack height="100%" position="relative" zIndex={1000}>
+        <Button
+          onPress={() => setIsOpen(!isOpen)}
+          backgroundColor="rgba(0, 122, 255, 0.1)"
+          borderColor="rgba(0, 122, 255, 0.3)"
+          borderRadius="$3"
+          borderWidth="$0.5"
+          height="100%"
+          hoverStyle={isWeb ? {
+            backgroundColor: 'rgba(0, 122, 255, 0.15)',
+            borderColor: 'rgba(0, 122, 255, 0.5)',
+          } : undefined}
+          paddingHorizontal="$3"
+          paddingVertical="$1.5"
+          pressStyle={{
+            backgroundColor: 'rgba(0, 122, 255, 0.2)',
+          }}
+        >
+          <XStack alignItems="center" gap="$1.5">
+            <IconSymbol
+              name={currentRole.icon as any}
+              color="$tint"
+              size={20}
+            />
+            <ThemedText color="$tint" fontSize="$3" marginLeft="$2">
+              {currentRole.label}
+            </ThemedText>
+            <IconSymbol
+              name={isOpen ? "chevron-up" : "chevron-down"}
+              color="$tint"
+              size={16}
+            />
+          </XStack>
+        </Button>
+      </YStack>
+
+      {/* Modal with side panel - works on all platforms */}
+      <Modal
+        onRequestClose={() => setIsOpen(false)}
+        animationType="fade"
+        transparent={true}
+        visible={isOpen}
+      >
+        <View
+          onPress={() => setIsOpen(false)}
+          alignItems="flex-start"
+          backgroundColor="rgba(0, 0, 0, 0.4)"
+          bottom={0}
+          flex={1}
+          justifyContent="flex-start"
+          left={0}
+          position="absolute"
+          right={0}
+          top={0}
+        >
+          <View
+            onPress={(e: any) => e.stopPropagation()}
+            backgroundColor="$background"
+            borderRadius="$5"
+            left={HEADER_PADDING}
+            maxHeight={maxPanelHeight}
+            maxWidth={380}
+            minWidth={280}
+            shadowColor="$shadowColor"
+            shadowOffset={{ width: 2, height: 0 }}
+            shadowOpacity={0.25}
+            shadowRadius={10}
+            top={HEADER_HEIGHT}
+            width="auto"
+          >
+            {renderDropdownContent()}
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 

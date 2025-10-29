@@ -1,7 +1,7 @@
 import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { Button, YStack } from 'tamagui';
+import { Button, View, YStack } from 'tamagui';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -73,98 +73,117 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
 
   return (
     <YStack
+      onMouseEnter={Platform.OS === 'web' ? handleMouseEnter : undefined}
+      onMouseLeave={Platform.OS === 'web' ? handleMouseLeave : undefined}
+      animation="quick"
       backgroundColor="$background"
-      position="absolute"
-      left={0}
-      top={0}
-      bottom={0}
-      borderRightWidth="$0.5"
       borderRightColor="$borderColor"
+      borderRightWidth="$0.5"
+      bottom={0}
+      gap="$2"
+      justifyContent="flex-start"
+      left={0}
+      opacity={isVisible ? 1 : 0}
+      overflow="hidden"
+      paddingVertical="$4"
+      position="absolute"
+      scale={isVisible ? 1 : 0.95}
       shadowColor={isHovered ? "$shadowColor" : "transparent"}
       shadowOffset={{ width: 1, height: 0 }}
       shadowOpacity={isHovered ? 0.15 : 0}
       shadowRadius={2}
+      top={0}
       width={isExpanded ? 240 : 72}
       zIndex={1000}
-      animation="quick"
-      opacity={isVisible ? 1 : 0}
-      scale={isVisible ? 1 : 0.95}
-      onMouseEnter={Platform.OS === 'web' ? handleMouseEnter : undefined}
-      onMouseLeave={Platform.OS === 'web' ? handleMouseLeave : undefined}
-      paddingVertical="$4"
-      gap="$2"
-      overflow="hidden"
-      justifyContent="flex-start"
     >
       {/* Navigation Items */}
-      <YStack flex={1} gap="$2">
+      <YStack flex={1} gap={0}>
         {visibleItems.map((item, index) => {
           const isActive = isTabActive(item.href);
+          const isLast = index === visibleItems.length - 1;
           return (
-            <Button
-              key={item.id}
-              flexDirection="row"
-              alignItems="center"
-              justifyContent="flex-start"
-              paddingHorizontal="$4"
-              paddingVertical="$3"
-              backgroundColor={isActive ? "rgba(0, 122, 255, 0.1)" : "transparent"}
-              borderRadius="$2"
-              marginHorizontal="$2"
-              gap="$3"
-              onPress={() => handleTabPress(item.href)}
-              hoverStyle={Platform.OS === 'web' ? {
-                backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
-                scale: 1.02,
-                userSelect: 'none',
-              } : undefined}
-              pressStyle={{
-                backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
-                scale: 0.98,
-              }}
-              style={{
-                userSelect: 'none',
-              }}
-              opacity={1}
-            >
-              <IconSymbol
-                name={item.icon as any}
-                size={24}
-                color={isActive ? "$tint" : "$tabIconDefault"}
-              />
-            <ThemedText
-              fontSize="$4"
-              fontWeight={isActive ? "$5" : "$3"}
-              color={isActive ? "$tint" : "$color"}
-              numberOfLines={1}
-              opacity={isExpanded ? 1 : 0}
-              style={{
-                userSelect: 'none',
-              }}
-            >
-              {item.name}
-            </ThemedText>
-            </Button>
+            <React.Fragment key={item.id}>
+              <Button
+                style={{
+                  userSelect: 'none',
+                }}
+                onPress={() => handleTabPress(item.href)}
+                alignItems="center"
+                backgroundColor={isActive ? "rgba(0, 122, 255, 0.1)" : "transparent"}
+                borderRadius={0}
+                flexDirection="row"
+                gap="$3"
+                hoverStyle={Platform.OS === 'web' ? {
+                  backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                  scale: 1.02,
+                  userSelect: 'none',
+                } : undefined}
+                justifyContent="flex-start"
+                marginHorizontal="$2"
+                opacity={1}
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                pressStyle={{
+                  backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                  scale: 0.98,
+                }}
+              >
+                <IconSymbol
+                  name={item.icon as any}
+                  color={isActive ? "$tint" : "$tabIconDefault"}
+                  size={24}
+                />
+                <ThemedText
+                  style={{
+                    userSelect: 'none',
+                  }}
+                  color={isActive ? "$tint" : "$color"}
+                  fontSize="$4"
+                  fontWeight={isActive ? "$5" : "$3"}
+                  numberOfLines={1}
+                  opacity={isExpanded ? 1 : 0}
+                >
+                  {item.name}
+                </ThemedText>
+              </Button>
+              {!isLast && (
+                <View
+                  backgroundColor="rgba(0, 0, 0, 0.08)"
+                  height={1}
+                  marginHorizontal="$2"
+                  marginVertical="$1"
+                />
+              )}
+            </React.Fragment>
           );
         })}
       </YStack>
 
+      {/* Divider before AI Assistant */}
+      <View
+        backgroundColor="rgba(0, 0, 0, 0.08)"
+        height={1}
+        marginHorizontal="$2"
+        marginVertical="$2"
+      />
+
       {/* GA-X AI Assistant Button - Fixed at bottom, standalone */}
       <Button
-        flexDirection="row"
-        alignItems="center"
-        justifyContent="flex-start"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        backgroundColor="rgba(0, 122, 255, 0.1)"
-        borderRadius="$2"
-        marginHorizontal="$2"
-        marginBottom="$2"
-        gap={isExpanded ? "$3" : "$0"}
+        style={Platform.OS === 'web' ? {
+          boxShadow: isExpanded
+            ? '0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2)'
+            : '0 0 10px rgba(0, 122, 255, 0.3)',
+          userSelect: 'none',
+        } : {}}
         onPress={() => {
           console.log('GA-X AI Assistant clicked');
           // TODO: Open AI assistant modal or navigate to AI page
         }}
+        alignItems="center"
+        backgroundColor="rgba(0, 122, 255, 0.1)"
+        borderRadius="$2"
+        flexDirection="row"
+        gap={isExpanded ? "$3" : "$0"}
         hoverStyle={Platform.OS === 'web' ? {
           backgroundColor: 'rgba(0, 122, 255, 0.2)',
           scale: 1.02,
@@ -174,31 +193,30 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
           backgroundColor: 'rgba(0, 122, 255, 0.2)',
           scale: 1.02,
         }}
+        justifyContent="flex-start"
+        marginBottom="$2"
+        marginHorizontal="$2"
+        paddingHorizontal="$4"
+        paddingVertical="$3"
         pressStyle={{
           backgroundColor: 'rgba(0, 122, 255, 0.3)',
           scale: 0.98,
         }}
-        style={Platform.OS === 'web' ? {
-          boxShadow: isExpanded
-            ? '0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2)'
-            : '0 0 10px rgba(0, 122, 255, 0.3)',
-          userSelect: 'none',
-        } : {}}
       >
         <IconSymbol
           name="brain"
-          size={24}
           color="#007AFF"
+          size={24}
         />
         {isExpanded && (
           <ThemedText
-            fontSize="$4"
-            fontWeight="$5"
-            color="#007AFF"
-            numberOfLines={1}
             style={{
               userSelect: 'none',
             }}
+            color="#007AFF"
+            fontSize="$4"
+            fontWeight="$5"
+            numberOfLines={1}
           >
             GA-X AI Assistant
           </ThemedText>

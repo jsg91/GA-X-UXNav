@@ -90,15 +90,20 @@ export const tokens = createTokens({
     light_border: 'rgba(0, 0, 0, 0.1)',
     light_shadow: 'rgba(0, 0, 0, 0.1)',
     light_outlineColor: 'rgba(0, 123, 255, 0.5)',
-    // Dark theme colors
-    dark_text: '#FFFFFF',
-    dark_background: '#000000',
+    // Dark theme colors - improved palette
+    dark_text: '#F8F9FA', // Off-white for primary text
+    dark_text_secondary: '#E9ECEF', // Lighter gray for secondary text
+    dark_text_tertiary: '#ADB5BD', // Medium gray for tertiary text
+    dark_background: '#0F1419', // Dark blue-gray background (instead of pure black)
+    dark_background_secondary: '#1A1F23', // Slightly lighter for cards/containers
+    dark_background_hover: '#1F2529', // For hover states
     dark_tint: tintColorDark,
-    dark_icon: '#CCCCCC',
-    dark_tabIconDefault: '#999999',
+    dark_icon: '#E9ECEF', // Lighter icons for better visibility
+    dark_tabIconDefault: '#ADB5BD', // Medium gray for unselected tabs
     dark_tabIconSelected: tintColorDark,
-    dark_border: 'rgba(255, 255, 255, 0.1)',
-    dark_shadow: 'rgba(0, 0, 0, 0.3)',
+    dark_border: 'rgba(255, 255, 255, 0.08)', // Subtle borders
+    dark_border_hover: 'rgba(255, 255, 255, 0.12)', // Slightly more visible on hover
+    dark_shadow: 'rgba(0, 0, 0, 0.4)', // Stronger shadows for depth
     dark_outlineColor: 'rgba(0, 123, 255, 0.7)',
     // Add missing tokens that themes reference
     tint: tintColorLight,
@@ -190,25 +195,31 @@ export const lightTheme = {
 
 export const darkTheme = {
   background: tokens.color.dark_background,
-  backgroundHover: '#1a1a1a',
-  backgroundPress: '#2a2a2a',
-  backgroundFocus: '#1f1f1f',
+  backgroundHover: tokens.color.dark_background_hover,
+  backgroundPress: '#252B30', // Even lighter press state
+  backgroundFocus: '#1F2529', // Consistent with hover
+  backgroundSecondary: tokens.color.dark_background_secondary,
+  backgroundSecondaryHover: '#20252A',
+  backgroundSecondaryPress: '#272C31',
+  backgroundSecondaryFocus: '#22272C',
   color: tokens.color.dark_text,
-  colorHover: tokens.color.tint,
+  colorSecondary: tokens.color.dark_text_secondary,
+  colorTertiary: tokens.color.dark_text_tertiary,
+  colorHover: tokens.color.dark_text_secondary,
   colorPress: tokens.color.tint,
-  colorFocus: tokens.color.tint,
+  colorFocus: tokens.color.dark_text_secondary,
   borderColor: tokens.color.dark_border,
-  borderColorHover: tokens.color.dark_border,
+  borderColorHover: tokens.color.dark_border_hover,
   borderColorPress: tokens.color.tint,
-  borderColorFocus: tokens.color.tint,
+  borderColorFocus: tokens.color.dark_border_hover,
   shadowColor: tokens.color.dark_shadow,
-  shadowColorHover: tokens.color.dark_shadow,
-  shadowColorPress: tokens.color.dark_shadow,
-  shadowColorFocus: tokens.color.dark_shadow,
+  shadowColorHover: 'rgba(0, 0, 0, 0.5)',
+  shadowColorPress: 'rgba(0, 0, 0, 0.6)',
+  shadowColorFocus: 'rgba(0, 0, 0, 0.5)',
   outlineColor: tokens.color.dark_outlineColor,
   outlineColorHover: tokens.color.dark_outlineColor,
   outlineColorPress: tokens.color.tint,
-  outlineColorFocus: tokens.color.tint,
+  outlineColorFocus: tokens.color.dark_outlineColor,
 };
 
 // Create animations using react-native-reanimated
@@ -325,19 +336,31 @@ export type Tokens = typeof tokens;
 export const Colors = {
   light: {
     text: '#000000',
+    textSecondary: '#000000',
+    textTertiary: '#000000',
     background: '#FFFFFF',
+    backgroundSecondary: '#FFFFFF',
+    backgroundHover: '#FFFFFF',
     tint: tintColorLight,
     icon: '#333333',
     tabIconDefault: '#666666',
     tabIconSelected: tintColorLight,
+    border: 'rgba(0, 0, 0, 0.1)',
+    shadow: 'rgba(0, 0, 0, 0.1)',
   },
   dark: {
-    text: '#FFFFFF',
-    background: '#000000',
+    text: '#F8F9FA',
+    textSecondary: '#E9ECEF',
+    textTertiary: '#ADB5BD',
+    background: '#0F1419',
+    backgroundSecondary: '#1A1F23',
+    backgroundHover: '#1F2529',
     tint: tintColorDark,
-    icon: '#CCCCCC',
-    tabIconDefault: '#999999',
+    icon: '#E9ECEF',
+    tabIconDefault: '#ADB5BD',
     tabIconSelected: tintColorDark,
+    border: 'rgba(255, 255, 255, 0.08)',
+    shadow: 'rgba(0, 0, 0, 0.4)',
   },
 };
 

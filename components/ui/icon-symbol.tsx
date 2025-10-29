@@ -6,7 +6,8 @@
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import React from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle, View } from 'react-native';
+import { OpaqueColorValue,   View } from 'react-native';
+import type {StyleProp, TextStyle} from 'react-native';
 import { useTheme } from 'tamagui';
 
 // Get proper TypeScript types from @expo/vector-icons

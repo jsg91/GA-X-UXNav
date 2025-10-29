@@ -17,6 +17,15 @@ export default function HomeScreen() {
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
         </ThemedText>
       </ThemedView>
+
+      {/* Demo of improved dark theme colors */}
+      <ThemedView variant="secondary" style={[styles.stepContainer, styles.demoContainer]}>
+        <ThemedText type="subtitle">Theme Demo</ThemedText>
+        <ThemedText level="primary">Primary text - main content</ThemedText>
+        <ThemedText level="secondary">Secondary text - supporting information</ThemedText>
+        <ThemedText level="tertiary">Tertiary text - metadata and hints</ThemedText>
+      </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Features</ThemedText>
         <ThemedText>
@@ -49,5 +58,9 @@ const styles = StyleSheet.create({
   stepContainer: {
     gap: 8,
     marginBottom: 8,
+  },
+  demoContainer: {
+    padding: 16,
+    borderRadius: 8,
   },
 });

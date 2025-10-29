@@ -43,77 +43,77 @@ export function ProfileMenu() {
     <>
       {/* Profile Menu Button */}
       <Button
-        size="$2"
-        backgroundColor="transparent"
-        padding="$2"
-        marginRight="$2"
-        height="100%"
         onPress={() => setIsVisible(true)}
+        backgroundColor="transparent"
+        height="100%"
         hoverStyle={{
           backgroundColor: 'rgba(0, 0, 0, 0.05)',
           transform: 'scale(1.02)',
         }}
+        marginRight="$2"
+        padding="$2"
         pressStyle={{
           backgroundColor: 'rgba(0, 0, 0, 0.1)',
           transform: 'scale(0.98)',
         }}
+        size="$2"
       >
         <IconSymbol
           name="account"
-          size={24}
           color="$color"
+          size={24}
         />
       </Button>
 
       {/* Profile Menu Modal */}
       <Modal
-        visible={isVisible}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setIsVisible(false)}
+        animationType="fade"
+        transparent={true}
+        visible={isVisible}
       >
         <View
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          backgroundColor="rgba(0, 0, 0, 0.4)"
-          justifyContent="flex-start"
-          alignItems="flex-end"
-          paddingTop="$12"
-          paddingRight={0}
           onPress={() => setIsVisible(false)}
+          alignItems="flex-end"
+          backgroundColor="rgba(0, 0, 0, 0.4)"
+          bottom={0}
+          justifyContent="flex-start"
+          left={0}
+          paddingRight={0}
+          paddingTop="$12"
+          position="absolute"
+          right={0}
+          top={0}
         >
           <View
             onPress={(e: any) => e.stopPropagation()}
-            width="70%"
-            maxWidth={300}
-            height="100%"
-            borderTopLeftRadius="$5"
-            borderBottomLeftRadius="$5"
             backgroundColor="$background"
+            borderBottomLeftRadius="$5"
+            borderTopLeftRadius="$5"
+            height="100%"
+            marginLeft="auto"
+            maxWidth={300}
             shadowColor="$shadowColor"
             shadowOffset={{ width: -2, height: 0 }}
             shadowOpacity={0.25}
             shadowRadius={10}
-            marginLeft="auto"
+            width="70%"
           >
-            <YStack paddingHorizontal="$5" paddingTop="$5" paddingBottom="$5" borderBottomWidth="$0.5" borderBottomColor="$borderColor">
-              <XStack justifyContent="space-between" alignItems="center">
-                <TamaguiText fontSize="$8" fontWeight="$5" color="$color">
+            <YStack borderBottomColor="$borderColor" borderBottomWidth="$0.5" paddingBottom="$5" paddingHorizontal="$5" paddingTop="$5">
+              <XStack alignItems="center" justifyContent="space-between">
+                <TamaguiText color="$color" fontSize="$8" fontWeight="$5">
                   Profile Menu
                 </TamaguiText>
                 <Button
-                  size="$2"
+                  onPress={() => setIsVisible(false)}
                   backgroundColor="transparent"
                   padding="$1"
-                  onPress={() => setIsVisible(false)}
+                  size="$2"
                 >
                   <IconSymbol
                     name="close"
-                    size={20}
                     color="$color"
+                    size={20}
                   />
                 </Button>
               </XStack>
@@ -125,28 +125,28 @@ export function ProfileMenu() {
                 .map((item) => (
                   <Button
                     key={item.id}
-                    paddingVertical="$3"
-                    paddingHorizontal={0}
-                    backgroundColor="transparent"
-                    borderBottomWidth="$0.5"
-                    borderBottomColor="rgba(0, 0, 0, 0.05)"
-                    disabled={!item.href && item.id !== 'logout'}
                     onPress={() => {
                       if (item.href || item.id === 'logout') {
                         handleMenuItemPress(item as any);
                       }
                     }}
+                    disabled={!item.href && item.id !== 'logout'}
+                    backgroundColor="transparent"
+                    borderBottomColor="rgba(0, 0, 0, 0.05)"
+                    borderBottomWidth="$0.5"
                     justifyContent="flex-start"
+                    paddingHorizontal={0}
+                    paddingVertical="$3"
                   >
                     {item.href ? (
                       <Link href={item.href} style={{ width: '100%' }}>
                         <XStack alignItems="center" gap="$3" width="100%">
                           <IconSymbol
                             name={item.icon as any}
-                            size={20}
                             color="$color"
+                            size={20}
                           />
-                          <TamaguiText flex={1} color="$color" fontSize="$3.5" fontWeight="$4">
+                          <TamaguiText color="$color" flex={1} fontSize="$3.5" fontWeight="$4">
                             {item.name}
                           </TamaguiText>
                         </XStack>
@@ -155,12 +155,12 @@ export function ProfileMenu() {
                       <XStack alignItems="center" gap="$3" width="100%">
                         <IconSymbol
                           name={item.icon as any}
-                          size={20}
                           color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
+                          size={20}
                         />
                         <TamaguiText
-                          flex={1}
                           color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
+                          flex={1}
                           fontSize="$3.5"
                           fontWeight="$4"
                         >

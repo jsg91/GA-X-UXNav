@@ -10,49 +10,49 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={{ flex: 1 }}>
-      <YStack padding="$4" gap="$4" backgroundColor="$background">
+      <YStack backgroundColor="$background" gap="$4" padding="$4">
         {/* Header */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="$5" color="$color" fontFamily="$body">
+          <Text color="$color" fontFamily="$body" fontSize="$8" fontWeight="$5">
             Settings
           </Text>
-          <Text fontSize="$3" color="$color" opacity={0.7} fontFamily="$body">
+          <Text color="$color" fontFamily="$body" fontSize="$3" opacity={0.7}>
             Customize your app experience
           </Text>
         </YStack>
 
         {/* Appearance Section */}
         <YStack gap="$3">
-          <Text fontSize="$5" fontWeight="$4" color="$color" fontFamily="$body">
+          <Text color="$color" fontFamily="$body" fontSize="$5" fontWeight="$4">
             Appearance
           </Text>
 
           {/* Theme Selection */}
           <YStack gap="$2">
-            <Text fontSize="$3" color="$color" opacity={0.8} fontFamily="$body">
+            <Text color="$color" fontFamily="$body" fontSize="$3" opacity={0.8}>
               Theme
             </Text>
             <YStack gap="$1">
               <Button
+                onPress={() => setTheme('light')}
                 backgroundColor={theme === 'light' ? 'rgba(0, 122, 255, 0.1)' : 'transparent'}
-                borderWidth="$0.5"
                 borderColor={theme === 'light' ? 'rgba(0, 122, 255, 0.3)' : '$borderColor'}
                 borderRadius="$4"
-                padding="$3"
-                onPress={() => setTheme('light')}
+                borderWidth="$0.5"
                 justifyContent="flex-start"
+                padding="$3"
               >
-                <XStack alignItems="center" gap="$3" flex={1}>
+                <XStack alignItems="center" flex={1} gap="$3">
                   <IconSymbol
                     name="weather-sunny"
-                    size={20}
                     color={theme === 'light' ? '$tint' : '$color'}
+                    size={20}
                   />
-                  <Text color={theme === 'light' ? '$tint' : '$color'} fontSize="$3" fontWeight="$4" fontFamily="$body">
+                  <Text color={theme === 'light' ? '$tint' : '$color'} fontFamily="$body" fontSize="$3" fontWeight="$4">
                     Light
                   </Text>
                   {theme === 'light' && (
-                    <Text marginLeft="auto" color="$tint" fontSize="$2" fontFamily="$body">
+                    <Text color="$tint" fontFamily="$body" fontSize="$2" marginLeft="auto">
                       Current
                     </Text>
                   )}
@@ -60,25 +60,25 @@ export default function SettingsScreen() {
               </Button>
 
               <Button
+                onPress={() => setTheme('dark')}
                 backgroundColor={theme === 'dark' ? 'rgba(10, 132, 255, 0.1)' : 'transparent'}
-                borderWidth="$0.5"
                 borderColor={theme === 'dark' ? 'rgba(10, 132, 255, 0.3)' : '$borderColor'}
                 borderRadius="$4"
-                padding="$3"
-                onPress={() => setTheme('dark')}
+                borderWidth="$0.5"
                 justifyContent="flex-start"
+                padding="$3"
               >
-                <XStack alignItems="center" gap="$3" flex={1}>
+                <XStack alignItems="center" flex={1} gap="$3">
                   <IconSymbol
                     name="weather-night"
-                    size={20}
                     color={theme === 'dark' ? '$tint' : '$color'}
+                    size={20}
                   />
-                  <Text color={theme === 'dark' ? '$tint' : '$color'} fontSize="$3" fontWeight="$4" fontFamily="$body">
+                  <Text color={theme === 'dark' ? '$tint' : '$color'} fontFamily="$body" fontSize="$3" fontWeight="$4">
                     Dark
                   </Text>
                   {theme === 'dark' && (
-                    <Text marginLeft="auto" color="$tint" fontSize="$2" fontFamily="$body">
+                    <Text color="$tint" fontFamily="$body" fontSize="$2" marginLeft="auto">
                       Current
                     </Text>
                   )}
@@ -86,25 +86,25 @@ export default function SettingsScreen() {
               </Button>
 
               <Button
+                onPress={() => setTheme('system')}
                 backgroundColor={theme === 'system' ? 'rgba(0, 122, 255, 0.1)' : 'transparent'}
-                borderWidth="$0.5"
                 borderColor={theme === 'system' ? 'rgba(0, 122, 255, 0.3)' : '$borderColor'}
                 borderRadius="$4"
-                padding="$3"
-                onPress={() => setTheme('system')}
+                borderWidth="$0.5"
                 justifyContent="flex-start"
+                padding="$3"
               >
-                <XStack alignItems="center" gap="$3" flex={1}>
+                <XStack alignItems="center" flex={1} gap="$3">
                   <IconSymbol
                     name="theme-light-dark"
-                    size={20}
                     color={theme === 'system' ? '$tint' : '$color'}
+                    size={20}
                   />
-                  <Text color={theme === 'system' ? '$tint' : '$color'} fontSize="$3" fontWeight="$4" fontFamily="$body">
+                  <Text color={theme === 'system' ? '$tint' : '$color'} fontFamily="$body" fontSize="$3" fontWeight="$4">
                     System
                   </Text>
                   {theme === 'system' && (
-                    <Text marginLeft="auto" color="$tint" fontSize="$2" fontFamily="$body">
+                    <Text color="$tint" fontFamily="$body" fontSize="$2" marginLeft="auto">
                       Current
                     </Text>
                   )}
@@ -116,12 +116,12 @@ export default function SettingsScreen() {
           {/* Current Theme Status */}
           <View
             backgroundColor="$background"
-            borderWidth="$0.5"
             borderColor="$borderColor"
             borderRadius="$4"
+            borderWidth="$0.5"
             padding="$3"
           >
-            <Text fontSize="$3" color="$color" opacity={0.8} fontFamily="$body">
+            <Text color="$color" fontFamily="$body" fontSize="$3" opacity={0.8}>
               Current theme: {resolvedTheme} {theme === 'system' ? '(system)' : '(manual)'}
             </Text>
           </View>
@@ -129,24 +129,24 @@ export default function SettingsScreen() {
 
         {/* App Info Section */}
         <YStack gap="$3">
-          <Text fontSize="$5" fontWeight="$4" color="$color" fontFamily="$body">
+          <Text color="$color" fontFamily="$body" fontSize="$5" fontWeight="$4">
             About
           </Text>
 
           <View
             backgroundColor="$background"
-            borderWidth="$0.5"
             borderColor="$borderColor"
             borderRadius="$4"
+            borderWidth="$0.5"
             padding="$3"
           >
             <XStack alignItems="center" gap="$3">
-              <IconSymbol name="information" size={20} color="$color" />
+              <IconSymbol name="information" color="$color" size={20} />
               <YStack flex={1}>
-                <Text fontSize="$3" fontWeight="$4" color="$color" fontFamily="$body">
+                <Text color="$color" fontFamily="$body" fontSize="$3" fontWeight="$4">
                   GA-X Aviation Platform
                 </Text>
-                <Text fontSize="$2" color="$color" opacity={0.7} fontFamily="$body">
+                <Text color="$color" fontFamily="$body" fontSize="$2" opacity={0.7}>
                   Version 1.0.0
                 </Text>
               </YStack>
