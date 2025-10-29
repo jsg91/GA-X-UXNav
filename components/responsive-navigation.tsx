@@ -30,7 +30,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const { width } = useWindowDimensions();
   const [notificationCount] = useState(3); // Mock notification count
   const [messageCount] = useState(2); // Mock message count
-  const [currentRole, setCurrentRole] = useState<Role>(ROLE_CONFIG.roles[0]); // Default to Pilot
+  const [currentRole, setCurrentRole] = useState<Role>(ROLE_CONFIG.getAllRoles()[0]); // Default to Pilot
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [dimensionsReady, setDimensionsReady] = useState(false);
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);

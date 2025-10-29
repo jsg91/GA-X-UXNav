@@ -22,18 +22,124 @@ export interface Role {
   permissionRequired?: boolean;
 }
 
+// Hierarchical group structure
+export interface RoleGroup {
+  name: string;
+  icon: string;
+  roles: Role[];
+}
+
 export const ROLE_CONFIG = {
-  roles: [
-    { id: 'pilot', name: 'Pilot', icon: 'airplane', label: 'Pilots', visible: true },
-    { id: 'instructor', name: 'Instructor', icon: 'school', label: 'Instructors', visible: true },
-    { id: 'flightschool-admin', name: 'Flight School Admin', icon: 'school', label: 'Flightschool-Admin', visible: true },
-    { id: 'flightclub-admin', name: 'Flight Club Admin', icon: 'account-group', label: 'Flightclub-Admin', visible: true },
-    { id: 'aerodrome-admin', name: 'Aerodrome Admin', icon: 'airport', label: 'Aerodrome-Admin', visible: true },
-    { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance', visible: true },
-    { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA', visible: true, permissionRequired: true },
-    { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs', visible: true, permissionRequired: true },
-    { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', visible: true, permissionRequired: true },
-  ] as const satisfies readonly Role[],
+  groups: [
+    {
+      name: 'Flying & Training',
+      icon: 'airplane-takeoff',
+      roles: [
+        { id: 'pilot', name: 'Pilot', icon: 'airplane', label: 'Pilots', visible: true },
+        { id: 'instructor', name: 'Instructor', icon: 'school', label: 'Instructors', visible: true },
+        { id: 'ground-instructor', name: 'Ground Instructor', icon: 'teach', label: 'Ground Instructors', visible: true },
+        { id: 'student', name: 'Student', icon: 'account-school', label: 'Students', visible: true },
+        { id: 'passenger', name: 'Passenger', icon: 'seat-passenger', label: 'Passengers', visible: true },
+        { id: 'safety-officer', name: 'Safety Officer', icon: 'shield-alert', label: 'Safety Officers', visible: true },
+      ]
+    },
+    {
+      name: 'Administration',
+      icon: 'office-building',
+      roles: [
+        { id: 'flightclub-admin', name: 'Flight Club Admin', icon: 'account-group', label: 'Flightclub-Admin', visible: true },
+        { id: 'flightschool-admin', name: 'Flight School Admin', icon: 'school', label: 'Flightschool-Admin', visible: true },
+        { id: 'fbo-admin', name: 'FBO Admin', icon: 'airplane-landing', label: 'FBO-Admins', visible: true },
+        { id: 'aerodrome-admin', name: 'Aerodrome Admin', icon: 'airport', label: 'Aerodrome-Admin', visible: true },
+        { id: 'maintenance', name: 'Maintenance', icon: 'wrench', label: 'Maintenance', visible: true },
+      ]
+    },
+    {
+      name: 'Manufacturing & Inspection',
+      icon: 'factory',
+      roles: [
+        { id: 'builder', name: 'Experimental Builder', icon: 'hammer-wrench', label: 'Experimental Builders', visible: true },
+        { id: 'manufacturer', name: 'Manufacturer', icon: 'factory', label: 'Manufacturers', visible: true },
+        { id: 'systems-vendor', name: 'Systems Vendor', icon: 'chip', label: 'Systems Vendors', visible: true },
+        { id: 'consultant', name: 'Engineering Consultant', icon: 'account-tie', label: 'Engineering Consultants', visible: true },
+        { id: 'inspector', name: 'Inspector', icon: 'clipboard-search', label: 'Inspectors', visible: true },
+      ]
+    },
+    {
+      name: 'Certification',
+      icon: 'certificate',
+      roles: [
+        { id: 'dpe', name: 'Designated Pilot Examiner', icon: 'clipboard-check', label: 'DPEs', visible: true, permissionRequired: true },
+        { id: 'ame', name: 'Aviation Medical Examiner', icon: 'stethoscope', label: 'AMEs', visible: true, permissionRequired: true },
+      ]
+    },
+    {
+      name: 'Insurance',
+      icon: 'shield-account',
+      roles: [
+        { id: 'insurance-broker', name: 'Insurance Broker', icon: 'shield-account', label: 'Insurance Brokers', visible: true },
+      ]
+    },
+    {
+      name: 'Regulatory',
+      icon: 'gavel',
+      roles: [
+        { id: 'caa', name: 'CAA', icon: 'shield-check', label: 'CAA', visible: true, permissionRequired: true },
+        { id: 'customs', name: 'Customs', icon: 'passport', label: 'Customs', visible: true, permissionRequired: true },
+      ]
+    }
+  ] as const satisfies readonly RoleGroup[],
+
+  // ===== STANDALONE ADMIN ROLE =====
+  adminRole: { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', visible: true, permissionRequired: true },
+
+  // ===== HIERARCHICAL NAVIGATION HELPERS =====
+  /**
+   * Get all roles as a flat array (for backward compatibility)
+   */
+  getAllRoles(): Role[] {
+    const roles: Role[] = [];
+    this.groups.forEach(group => {
+      roles.push(...group.roles);
+    });
+    roles.push(this.adminRole);
+    return roles;
+  },
+
+  /**
+   * Find a role by ID
+   */
+  getRoleById(id: string): Role | undefined {
+    if (id === 'admin') {
+      return this.adminRole;
+    }
+    return this.getAllRoles().find(role => role.id === id);
+  },
+
+  /**
+   * Get roles that don't require special permissions
+   */
+  getBasicRoles(): Role[] {
+    return this.getAllRoles().filter(role => role.visible && !role.permissionRequired);
+  },
+
+  /**
+   * Get roles that require special permissions
+   */
+  getPermissionRequiredRoles(): Role[] {
+    return this.getAllRoles().filter(role => role.visible && role.permissionRequired);
+  },
+
+  /**
+   * Get roles by group name
+   */
+  getRolesByGroup(groupName: string): Role[] {
+    const group = this.groups.find(g => g.name === groupName);
+    if (!group) return [];
+
+    return group.roles.filter(role => role.visible);
+  },
+
 };
 
 export const NAVIGATION_CONFIG = {
