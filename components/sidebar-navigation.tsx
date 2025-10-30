@@ -1,24 +1,36 @@
 import { usePathname, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { Button, View, YStack } from 'tamagui';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
+import { NAVIGATION_CONFIG, Role, generateNavigationForRole } from '@/constants/NAVIGATION';
 
 interface SidebarNavigationProps {
+  currentRole?: Role;
   onNavigate?: (href: string) => void;
   onExpansionChange?: (isExpanded: boolean) => void;
 }
 
-export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavigationProps) {
+export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }: SidebarNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Generate navigation items based on current role
+  const navigationItems = useMemo(() => {
+    if (currentRole) {
+      return generateNavigationForRole(currentRole);
+    }
+    // Fallback to old navigation config if no role
+    return NAVIGATION_CONFIG.tabBar.items.filter(item => {
+      return ('largeScreen' in item && item.largeScreen) || item.visible;
+    });
+  }, [currentRole]);
 
   const handleTabPress = (href: string) => {
     router.push(href as any);
@@ -61,43 +73,49 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
   }, [isExpanded, onExpansionChange]);
 
   // Check if a tab is active
-  const isTabActive = (href: string) => {
+  const isTabActive = (href: string | null | undefined) => {
+    if (!href) return false;
     if (href === '/(tabs)/' && pathname === '/') return true;
     if (href && pathname.includes(href.replace('/(tabs)/', ''))) return true;
     return href === pathname;
   };
 
-  const visibleItems = NAVIGATION_CONFIG.tabBar.items.filter(item => {
-    return ('largeScreen' in item && item.largeScreen) || item.visible;
-  });
+  const visibleItems = navigationItems;
+
+  // Header height - matches the header minHeight in responsive-navigation
+  const HEADER_HEIGHT = 56;
+  // Sidebar starts at top of content area (which is already below header)
+  const SIDEBAR_TOP_OFFSET = 0;
 
   return (
     <YStack
       onMouseEnter={Platform.OS === 'web' ? handleMouseEnter : undefined}
       onMouseLeave={Platform.OS === 'web' ? handleMouseLeave : undefined}
-      animation="quick"
+      animation="slow"
       backgroundColor="$background"
+      borderBottomRightRadius="$5"
       borderRightColor="$borderColor"
       borderRightWidth="$0.5"
-      bottom={0}
       gap="$2"
       justifyContent="flex-start"
       left={0}
       opacity={isVisible ? 1 : 0}
       overflow="hidden"
-      paddingVertical="$4"
+      paddingBottom="$4"
+      paddingTop={0}
       position="absolute"
       scale={isVisible ? 1 : 0.95}
       shadowColor={isHovered ? "$shadowColor" : "transparent"}
       shadowOffset={{ width: 1, height: 0 }}
       shadowOpacity={isHovered ? 0.15 : 0}
       shadowRadius={2}
-      top={0}
+      top={SIDEBAR_TOP_OFFSET}
+      transition="width 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
       width={isExpanded ? 240 : 72}
       zIndex={1000}
     >
       {/* Navigation Items */}
-      <YStack flex={1} gap={0}>
+      <YStack gap={0}>
         {visibleItems.map((item, index) => {
           const isActive = isTabActive(item.href);
           const isLast = index === visibleItems.length - 1;
@@ -107,14 +125,14 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
                 style={{
                   userSelect: 'none',
                 }}
-                onPress={() => handleTabPress(item.href)}
+                onPress={() => handleTabPress('href' in item ? item.href : (item as any).href)}
                 alignItems="center"
-                backgroundColor={isActive ? "rgba(0, 122, 255, 0.1)" : "transparent"}
+                backgroundColor="transparent"
                 borderRadius={0}
                 flexDirection="row"
                 gap="$3"
                 hoverStyle={Platform.OS === 'web' ? {
-                  backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "rgba(0, 0, 0, 0.05)",
                   scale: 1.02,
                   userSelect: 'none',
                 } : undefined}
@@ -122,14 +140,14 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
                 marginHorizontal="$2"
                 opacity={1}
                 paddingHorizontal="$4"
-                paddingVertical="$3"
+                paddingVertical="$4"
                 pressStyle={{
-                  backgroundColor: isActive ? "rgba(0, 122, 255, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                  backgroundColor: "rgba(0, 0, 0, 0.05)",
                   scale: 0.98,
                 }}
               >
                 <IconSymbol
-                  name={item.icon as any}
+                  name={(item.icon || (item as any).icon) as any}
                   color={isActive ? "$tint" : "$tabIconDefault"}
                   size={24}
                 />
@@ -137,13 +155,13 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
                   style={{
                     userSelect: 'none',
                   }}
-                  color={isActive ? "$tint" : "$color"}
+                  color="$color"
                   fontSize="$4"
-                  fontWeight={isActive ? "$5" : "$3"}
+                  fontWeight="$3"
                   numberOfLines={1}
                   opacity={isExpanded ? 1 : 0}
                 >
-                  {item.name}
+                  {item.name || item.label || (item as any).name}
                 </ThemedText>
               </Button>
               {!isLast && (
@@ -158,70 +176,6 @@ export function SidebarNavigation({ onNavigate, onExpansionChange }: SidebarNavi
           );
         })}
       </YStack>
-
-      {/* Divider before AI Assistant */}
-      <View
-        backgroundColor="rgba(0, 0, 0, 0.08)"
-        height={1}
-        marginHorizontal="$2"
-        marginVertical="$2"
-      />
-
-      {/* GA-X AI Assistant Button - Fixed at bottom, standalone */}
-      <Button
-        style={Platform.OS === 'web' ? {
-          boxShadow: isExpanded
-            ? '0 0 15px rgba(0, 122, 255, 0.4), 0 0 30px rgba(0, 122, 255, 0.2)'
-            : '0 0 10px rgba(0, 122, 255, 0.3)',
-          userSelect: 'none',
-        } : {}}
-        onPress={() => {
-          console.log('GA-X AI Assistant clicked');
-          // TODO: Open AI assistant modal or navigate to AI page
-        }}
-        alignItems="center"
-        backgroundColor="rgba(0, 122, 255, 0.1)"
-        borderRadius="$2"
-        flexDirection="row"
-        gap={isExpanded ? "$3" : "$0"}
-        hoverStyle={Platform.OS === 'web' ? {
-          backgroundColor: 'rgba(0, 122, 255, 0.2)',
-          scale: 1.02,
-          boxShadow: isExpanded ? '0 0 20px rgba(0, 122, 255, 0.4)' : '0 0 15px rgba(0, 122, 255, 0.3)',
-          userSelect: 'none',
-        } : {
-          backgroundColor: 'rgba(0, 122, 255, 0.2)',
-          scale: 1.02,
-        }}
-        justifyContent="flex-start"
-        marginBottom="$2"
-        marginHorizontal="$2"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        pressStyle={{
-          backgroundColor: 'rgba(0, 122, 255, 0.3)',
-          scale: 0.98,
-        }}
-      >
-        <IconSymbol
-          name="brain"
-          color="#007AFF"
-          size={24}
-        />
-        {isExpanded && (
-          <ThemedText
-            style={{
-              userSelect: 'none',
-            }}
-            color="#007AFF"
-            fontSize="$4"
-            fontWeight="$5"
-            numberOfLines={1}
-          >
-            GA-X AI Assistant
-          </ThemedText>
-        )}
-      </Button>
     </YStack>
   );
 }

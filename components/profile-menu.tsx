@@ -2,23 +2,31 @@ import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
 import { useThemeContext } from '@/hooks/use-theme-context';
-import { Link } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  Modal
-} from 'react-native';
+import { Modal, Platform, useWindowDimensions } from 'react-native';
 import {
   Button,
   ScrollView,
-  Text as TamaguiText,
   View,
   XStack,
   YStack
 } from 'tamagui';
+import { ThemedText } from './themed-text';
 
 export function ProfileMenu() {
   const [isVisible, setIsVisible] = useState(false);
   const { resolvedTheme } = useThemeContext();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { height: windowHeight } = useWindowDimensions();
+  const isWeb = Platform.OS === 'web';
+  
+  // Header height - matches the header minHeight in responsive-navigation
+  const HEADER_HEIGHT = 56;
+  // Header padding ($3) - matches paddingHorizontal in responsive-navigation header
+  const HEADER_PADDING = 12; // $3 = 12px
+  const maxPanelHeight = windowHeight > 0 ? windowHeight - HEADER_HEIGHT - 20 : 600;
 
   const handleLogout = () => {
     AlertUtils.showLogoutConfirmation(() => {
@@ -36,27 +44,114 @@ export function ProfileMenu() {
       return;
     }
 
-    // For other items, navigation will be handled by Link component
+    // Navigate to the route if href exists
+    if (item.href) {
+      router.push(item.href as any);
+    }
   };
+
+  const isItemActive = (item: typeof NAVIGATION_CONFIG.profileMenu.items[number]) => {
+    if (!item.href) return false;
+    if (item.href === '/(tabs)/' && pathname === '/') return true;
+    if (item.href && pathname.includes(item.href.replace('/(tabs)/', ''))) return true;
+    return item.href === pathname;
+  };
+
+  const visibleItems = NAVIGATION_CONFIG.profileMenu.items.filter(item => item.visible);
+
+  const renderDropdownContent = () => (
+    <>
+      <YStack 
+        borderBottomColor="$borderColor" 
+        borderBottomWidth="$0.5"
+        padding="$4"
+        paddingBottom="$3"
+      >
+        <XStack justifyContent="space-between">
+          <ThemedText color="$color" fontSize="$5" fontWeight="$6">
+            Profile Menu
+          </ThemedText>
+          <Button
+            onPress={() => setIsVisible(false)}
+            backgroundColor="transparent"
+            padding="$1"
+            size="$2"
+          >
+            <IconSymbol
+              name="close"
+              color="$color"
+              size={20}
+            />
+          </Button>
+        </XStack>
+      </YStack>
+
+      <ScrollView 
+        flex={1} 
+        showsVerticalScrollIndicator={false}
+      >
+        {visibleItems.map((item) => {
+          const isActive = isItemActive(item);
+          return (
+            <Button
+              key={item.id}
+              onPress={() => handleMenuItemPress(item)}
+              backgroundColor="transparent"
+              borderBottomWidth={0}
+              borderRadius={0}
+              hoverStyle={isWeb ? {
+                backgroundColor: 'rgba(0, 122, 255, 0.08)',
+              } : undefined}
+              paddingHorizontal="$4"
+              paddingVertical="$3"
+              pressStyle={{
+                backgroundColor: 'rgba(0, 122, 255, 0.12)',
+              }}
+            >
+              <XStack alignItems="center" gap="$3" justifyContent="flex-start" width="100%">
+                <IconSymbol
+                  name={item.icon as any}
+                  color={item.id === 'logout' 
+                    ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') 
+                    : (isActive ? "$tint" : "$color")}
+                  size={18}
+                />
+                <ThemedText
+                  color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
+                  flex={1}
+                  textAlign="left"
+                  fontSize="$4"
+                  fontWeight="$4"
+                >
+                  {item.name}
+                </ThemedText>
+              </XStack>
+            </Button>
+          );
+        })}
+      </ScrollView>
+    </>
+  );
 
   return (
     <>
       {/* Profile Menu Button */}
       <Button
-        onPress={() => setIsVisible(true)}
+        onPress={() => setIsVisible(!isVisible)}
         backgroundColor="transparent"
         height="100%"
         hoverStyle={{
           backgroundColor: 'rgba(0, 0, 0, 0.05)',
           transform: 'scale(1.02)',
         }}
-        marginRight="$2"
         padding="$2"
         pressStyle={{
           backgroundColor: 'rgba(0, 0, 0, 0.1)',
           transform: 'scale(0.98)',
         }}
         size="$2"
+        alignItems="center"
+        justifyContent="center"
       >
         <IconSymbol
           name="account"
@@ -65,7 +160,7 @@ export function ProfileMenu() {
         />
       </Button>
 
-      {/* Profile Menu Modal */}
+      {/* Modal with side panel - works on all platforms, same style as role switcher */}
       <Modal
         onRequestClose={() => setIsVisible(false)}
         animationType="fade"
@@ -77,10 +172,9 @@ export function ProfileMenu() {
           alignItems="flex-end"
           backgroundColor="rgba(0, 0, 0, 0.4)"
           bottom={0}
+          flex={1}
           justifyContent="flex-start"
           left={0}
-          paddingRight={0}
-          paddingTop="$12"
           position="absolute"
           right={0}
           top={0}
@@ -88,89 +182,19 @@ export function ProfileMenu() {
           <View
             onPress={(e: any) => e.stopPropagation()}
             backgroundColor="$background"
-            borderBottomLeftRadius="$5"
-            borderTopLeftRadius="$5"
-            height="100%"
-            marginLeft="auto"
-            maxWidth={300}
+            borderRadius="$5"
+            maxHeight={maxPanelHeight}
+            maxWidth={380}
+            minWidth={280}
+            right={HEADER_PADDING}
             shadowColor="$shadowColor"
-            shadowOffset={{ width: -2, height: 0 }}
+            shadowOffset={{ width: 2, height: 0 }}
             shadowOpacity={0.25}
             shadowRadius={10}
-            width="70%"
+            top={HEADER_HEIGHT}
+            width="auto"
           >
-            <YStack borderBottomColor="$borderColor" borderBottomWidth="$0.5" paddingBottom="$5" paddingHorizontal="$5" paddingTop="$5">
-              <XStack alignItems="center" justifyContent="space-between">
-                <TamaguiText color="$color" fontSize="$8" fontWeight="$5">
-                  Profile Menu
-                </TamaguiText>
-                <Button
-                  onPress={() => setIsVisible(false)}
-                  backgroundColor="transparent"
-                  padding="$1"
-                  size="$2"
-                >
-                  <IconSymbol
-                    name="close"
-                    color="$color"
-                    size={20}
-                  />
-                </Button>
-              </XStack>
-            </YStack>
-
-            <ScrollView flex={1} paddingHorizontal="$5" showsVerticalScrollIndicator={false}>
-              {NAVIGATION_CONFIG.profileMenu.items
-                .filter(item => item.visible)
-                .map((item) => (
-                  <Button
-                    key={item.id}
-                    onPress={() => {
-                      if (item.href || item.id === 'logout') {
-                        handleMenuItemPress(item as any);
-                      }
-                    }}
-                    disabled={!item.href && item.id !== 'logout'}
-                    backgroundColor="transparent"
-                    borderBottomColor="rgba(0, 0, 0, 0.05)"
-                    borderBottomWidth="$0.5"
-                    justifyContent="flex-start"
-                    paddingHorizontal={0}
-                    paddingVertical="$3"
-                  >
-                    {item.href ? (
-                      <Link href={item.href} style={{ width: '100%' }}>
-                        <XStack alignItems="center" gap="$3" width="100%">
-                          <IconSymbol
-                            name={item.icon as any}
-                            color="$color"
-                            size={20}
-                          />
-                          <TamaguiText color="$color" flex={1} fontSize="$3.5" fontWeight="$4">
-                            {item.name}
-                          </TamaguiText>
-                        </XStack>
-                      </Link>
-                    ) : (
-                      <XStack alignItems="center" gap="$3" width="100%">
-                        <IconSymbol
-                          name={item.icon as any}
-                          color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
-                          size={20}
-                        />
-                        <TamaguiText
-                          color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
-                          flex={1}
-                          fontSize="$3.5"
-                          fontWeight="$4"
-                        >
-                          {item.name}
-                        </TamaguiText>
-                      </XStack>
-                    )}
-                  </Button>
-                ))}
-            </ScrollView>
+            {renderDropdownContent()}
           </View>
         </View>
       </Modal>

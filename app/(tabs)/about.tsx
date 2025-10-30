@@ -132,13 +132,6 @@ export default function AboutScreen() {
             • Follow us for updates and aviation tips
           </ThemedText>
         </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <ThemedText style={styles.footerText}>
-            © 2025 GA-X. Built for the aviation community.
-          </ThemedText>
-        </View>
       </ThemedView>
     </ScrollView>
   );

@@ -869,6 +869,133 @@ export const XUISCHEMA_REGISTRY: Record<EntityName, XUISchemaDefinition> = {
   },
 } as const satisfies Record<EntityName, XUISchemaDefinition>;
 
+// ===== NAVIGATION GENERATION UTILITIES =====
+/**
+ * Generate navigation items for a role based on ROLE_CONFIG and XUISCHEMA_REGISTRY
+ */
+export interface GeneratedNavItem {
+  id: string;
+  name: string;
+  href: string;
+  icon: string;
+  label: string;
+  description?: string;
+  customPage?: boolean;
+}
+
+/**
+ * Map entity names to route-friendly names (e.g., 'logbookentries' -> 'logbook')
+ */
+function getRouteNameForEntity(entityName: EntityName | string): string {
+  const routeMap: Record<string, string> = {
+    'logbookentries': 'logbook',
+    'aircrafts': 'aircrafts',
+    'reservations': 'reservations',
+    'aerodromes': 'aerodromes',
+    'maintenance': 'maintenance',
+    'events': 'events',
+    'documents': 'documents',
+    'checklists': 'checklists',
+    'techlog': 'techlog',
+    'organizations': 'organizations',
+    'users': 'users',
+  };
+  return routeMap[entityName] || entityName;
+}
+
+export function generateNavigationForRole(role: Role): GeneratedNavItem[] {
+  const navItems: GeneratedNavItem[] = [];
+  
+  if (!role.navigation) {
+    return navItems;
+  }
+
+  // Get the context to use for this role (defaults to role.id or 'default')
+  const contextName: ContextName = (role.context as ContextName) || role.id as ContextName || 'default';
+
+  // Iterate through navigation items in the role
+  Object.entries(role.navigation).forEach(([entityKey, navConfig]) => {
+    // Check if it's a custom page (not in XUISCHEMA_REGISTRY)
+    if (navConfig && typeof navConfig === 'object' && 'customPage' in navConfig && navConfig.customPage) {
+      // Custom page - use the config directly
+      navItems.push({
+        id: entityKey,
+        name: navConfig.label || entityKey,
+        href: navConfig.route || `/(tabs)/${entityKey}`,
+        icon: navConfig.icon || 'file',
+        label: navConfig.label || entityKey,
+        customPage: true,
+      });
+    } else {
+      // Entity-based navigation - look up in XUISCHEMA_REGISTRY
+      const entityName = entityKey as EntityName;
+      const schema = XUISCHEMA_REGISTRY[entityName];
+      
+      if (schema) {
+        // Get context-specific config
+        const contextConfig = schema.contexts[contextName] || schema.contexts.default || {};
+        const pageConfig = contextConfig.pages?.list || {};
+        
+        // Override with role-specific config if provided
+        const roleOverride = navConfig && typeof navConfig === 'object' ? navConfig : {};
+        
+        navItems.push({
+          id: entityName,
+          name: roleOverride.label || pageConfig.title || schema.display.plural,
+          href: `/(tabs)/${getRouteNameForEntity(entityName)}`,
+          icon: roleOverride.icon || schema.display.icon,
+          label: roleOverride.label || pageConfig.title || schema.display.plural,
+          description: pageConfig.subtitle || schema.display.description,
+          customPage: false,
+        });
+      }
+    }
+  });
+
+  return navItems;
+}
+
+/**
+ * Get page information for an entity based on current role
+ * Uses the same logic as navigation generation to ensure consistency
+ * Handles both entities in XUISCHEMA_REGISTRY and custom pages
+ */
+export function getPageInfoForEntity(entityName: EntityName | string, role: Role): { title: string; description?: string } {
+  // First check if it's a custom page in the role's navigation config
+  const navConfig = role.navigation?.[entityName];
+  if (navConfig && typeof navConfig === 'object' && 'customPage' in navConfig && navConfig.customPage) {
+    return {
+      title: navConfig.label || entityName,
+      description: navConfig.description,
+    };
+  }
+
+  // Otherwise, look up in XUISCHEMA_REGISTRY (only if it's a valid EntityName)
+  const schema = entityName in XUISCHEMA_REGISTRY ? XUISCHEMA_REGISTRY[entityName as EntityName] : undefined;
+  if (!schema) {
+    // Fallback: check if there's a label override in navigation config even if not custom page
+    if (navConfig && typeof navConfig === 'object' && navConfig.label) {
+      return { title: navConfig.label };
+    }
+    return { title: entityName };
+  }
+
+  // Get the context to use for this role
+  const contextName: ContextName = (role.context as ContextName) || role.id as ContextName || 'default';
+  
+  // Get context-specific config
+  const contextConfig = schema.contexts[contextName] || schema.contexts.default || {};
+  const pageConfig = contextConfig.pages?.list || {};
+  
+  // Check for role-specific label override in navigation config (same logic as generateNavigationForRole)
+  const roleOverride = navConfig && typeof navConfig === 'object' ? navConfig : {};
+
+  return {
+    title: roleOverride.label || pageConfig.title || schema.display.plural,
+    description: pageConfig.subtitle || schema.display.description,
+  };
+}
+
 export const NAVIGATION_CONFIG = {
     // ===== APP STORE/FEATURE CATALOG =====
     /**
@@ -1032,7 +1159,7 @@ export const NAVIGATION_CONFIG = {
 
       // Global actions
       actions: {
-        focusSearch: { keys: 'cmd+k, ctrl+k, /', description: 'Focus search field' },
+        focusSearch: { keys: 'cmd+k, ctrl+k, ctrl+f, /', description: 'Focus search field' },
         toggleAI: { keys: 'cmd+j, ctrl+j, shift+space', description: 'Toggle AI Assistant' },
         newItem: { keys: 'n', description: 'Create new item (context-aware)' },
         help: { keys: 'shift+?', route: '/(tabs)/tips', description: 'Show keyboard shortcuts' },
@@ -1053,3 +1180,55 @@ export const NAVIGATION_CONFIG = {
       }
     } as const,
   } as const;
+
+// ===== NAVIGATION CONFIG HELPERS =====
+/**
+ * Get page information for a navigation item from NAVIGATION_CONFIG
+ * Used for top navigation and profile menu routes
+ */
+export function getPageInfoFromNavConfig(routeId: string): { title: string; icon: string; description?: string } | null {
+  // Special routes for top nav buttons
+  if (routeId === 'notifications') {
+    return {
+      title: 'Notifications',
+      icon: 'bell',
+      description: 'View your notifications',
+    };
+  }
+  if (routeId === 'messages') {
+    return {
+      title: 'Messages',
+      icon: 'message-text',
+      description: 'View your messages',
+    };
+  }
+  if (routeId === 'news') {
+    return {
+      title: 'Aviation News',
+      icon: 'newspaper',
+      description: 'Latest aviation news, weather updates, and regulatory changes',
+    };
+  }
+
+  // Check tabBar items
+  const tabBarItem = NAVIGATION_CONFIG.tabBar.items.find(item => item.id === routeId);
+  if (tabBarItem) {
+    return {
+      title: tabBarItem.name,
+      icon: tabBarItem.icon,
+      description: `${tabBarItem.name} page`,
+    };
+  }
+
+  // Check profileMenu items
+  const profileMenuItem = NAVIGATION_CONFIG.profileMenu.items.find(item => item.id === routeId);
+  if (profileMenuItem) {
+    return {
+      title: profileMenuItem.name,
+      icon: profileMenuItem.icon,
+      description: `${profileMenuItem.name} page`,
+    };
+  }
+
+  return null;
+}

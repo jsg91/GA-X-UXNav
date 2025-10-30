@@ -19,8 +19,12 @@ interface RoleSwitcherProps {
 
 export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
+  
+  // Same breakpoint as in responsive-navigation.tsx
+  const SIDEBAR_BREAKPOINT = 768;
+  const isSmallScreen = width < SIDEBAR_BREAKPOINT;
   
   // Header height - matches the header minHeight in responsive-navigation
   const HEADER_HEIGHT = 56;
@@ -86,21 +90,23 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
               borderTopColor="rgba(0, 0, 0, 0.08)"
               borderTopWidth={groupIndex > 0 ? "$0.5" : 0}
               paddingHorizontal="$4"
-              paddingVertical="$2.5"
+              paddingVertical={15}
+              minHeight={45}
+              justifyContent="center"
             >
               <XStack alignItems="center" gap="$2.5">
                 <IconSymbol
                   style={{ opacity: 0.5 }}
                   name="chevron-down"
                   color="$color"
-                  size={16}
+                  size={20}
                 />
                 <IconSymbol
                   name={group.icon as any}
                   color="$color"
-                  size={18}
+                  size={22}
                 />
-                <ThemedText style={{ opacity: 0.8 }} color="$color" fontSize="$4" fontWeight="$7" marginLeft="$1">
+                <ThemedText style={{ opacity: 0.8 }} color="$color" fontSize="$5" fontWeight="$7" marginLeft="$1">
                   {group.name}
                 </ThemedText>
               </XStack>
@@ -118,7 +124,8 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                   backgroundColor: 'rgba(0, 122, 255, 0.08)',
                 } : undefined}
                 paddingHorizontal="$4"
-                paddingVertical="$3"
+                paddingVertical={15}
+                minHeight={45}
                 pressStyle={{
                   backgroundColor: 'rgba(0, 122, 255, 0.12)',
                 }}
@@ -130,13 +137,13 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                     style={{ opacity: currentRole.id === role.id ? 1 : 0.7 }}
                     name={role.icon as any}
                     color={currentRole.id === role.id ? '$tint' : '$color'}
-                    size={18}
+                    size={22}
                   />
                   <ThemedText
                     color={currentRole.id === role.id ? '$tint' : '$color'}
                     flex={1}
                     textAlign="left"
-                    fontSize="$4"
+                    fontSize="$5"
                     fontWeight={currentRole.id === role.id ? '$6' : '$4'}
                   >
                     {role.label}
@@ -146,14 +153,14 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                       style={{ opacity: 0.6 }}
                       name="lock"
                       color="$tabIconDefault"
-                      size={14}
+                      size={18}
                     />
                   )}
                   {currentRole.id === role.id && (
                     <IconSymbol
                       name="check"
                       color="$tint"
-                      size={16}
+                      size={20}
                     />
                   )}
                 </XStack>
@@ -179,7 +186,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
             backgroundColor: 'rgba(0, 122, 255, 0.15)',
             borderColor: 'rgba(0, 122, 255, 0.5)',
           } : undefined}
-          paddingHorizontal="$3"
+          paddingHorizontal={isSmallScreen ? "$2" : "$3"}
           paddingVertical="$1.5"
           pressStyle={{
             backgroundColor: 'rgba(0, 122, 255, 0.2)',
@@ -191,9 +198,11 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
               color="$tint"
               size={20}
             />
-            <ThemedText color="$tint" fontSize="$3" marginLeft="$2">
-              {currentRole.label}
-            </ThemedText>
+            {!isSmallScreen && (
+              <ThemedText color="$tint" fontSize="$3" marginLeft="$2">
+                {currentRole.label}
+              </ThemedText>
+            )}
             <IconSymbol
               name={isOpen ? "chevron-up" : "chevron-down"}
               color="$tint"

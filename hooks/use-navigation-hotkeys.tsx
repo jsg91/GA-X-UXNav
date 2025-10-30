@@ -17,51 +17,94 @@ export function useNavigationHotkeys({
 }: NavigationHotkeysProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
+  const isWeb = Platform.OS === 'web';
 
-  // Only enable hotkeys on web platform
-  if (Platform.OS !== 'web') {
-    console.log('Hotkeys disabled - not on web platform');
-    return;
-  }
-
-  console.log('Initializing navigation hotkeys for web platform');
+  console.log(`Initializing navigation hotkeys for platform: ${Platform.OS}`);
 
   // Navigation shortcuts (GitHub-style sequences)
-  Object.entries((NAVIGATION_CONFIG as any).hotkeys.navigation).forEach(([key, config]: [string, any]) => {
-    console.log(`Registering navigation hotkey: ${config.keys} -> ${config.route}`);
-    useHotkeys(config.keys, () => {
-      console.log(`Navigation hotkey triggered: ${config.keys} -> ${config.route}`);
-      router.push(config.route as any);
-    }, {
-      preventDefault: true,
-      enableOnFormTags: false // Don't trigger when typing in inputs
-    });
+  // Must register each hotkey individually (can't call hooks in loops)
+  const navHotkeys = (NAVIGATION_CONFIG as any).hotkeys.navigation;
+  
+  useHotkeys(navHotkeys.dashboard?.keys || '', () => {
+    console.log(`Navigation hotkey triggered: ${navHotkeys.dashboard.keys} -> ${navHotkeys.dashboard.route}`);
+    router.push(navHotkeys.dashboard.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.dashboard,
+  });
+
+  useHotkeys(navHotkeys.reservations?.keys || '', () => {
+    router.push(navHotkeys.reservations.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.reservations,
+  });
+
+  useHotkeys(navHotkeys.logbook?.keys || '', () => {
+    router.push(navHotkeys.logbook.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.logbook,
+  });
+
+  useHotkeys(navHotkeys.aircrafts?.keys || '', () => {
+    router.push(navHotkeys.aircrafts.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.aircrafts,
+  });
+
+  useHotkeys(navHotkeys.aerodromes?.keys || '', () => {
+    router.push(navHotkeys.aerodromes.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.aerodromes,
+  });
+
+  useHotkeys(navHotkeys.maintenance?.keys || '', () => {
+    router.push(navHotkeys.maintenance.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.maintenance,
+  });
+
+  useHotkeys(navHotkeys.routePlanner?.keys || '', () => {
+    router.push(navHotkeys.routePlanner.route as any);
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false,
+    enabled: Platform.OS === 'web' && !!navHotkeys.routePlanner,
   });
 
   // Global actions
   const hotkeysConfig = (NAVIGATION_CONFIG as any).hotkeys;
 
-  console.log(`Registering search hotkey: ${hotkeysConfig.actions.focusSearch.keys}`);
-  useHotkeys(hotkeysConfig.actions.focusSearch.keys, () => {
+  useHotkeys(hotkeysConfig.actions.focusSearch?.keys || '', () => {
     console.log(`Search hotkey triggered: ${hotkeysConfig.actions.focusSearch.keys}`);
     onFocusSearch?.();
   }, {
     preventDefault: true,
-    enableOnFormTags: true // Allow in inputs for search focus
+    enableOnFormTags: true, // Allow in inputs for search focus
+    enabled: isWeb && !!hotkeysConfig.actions.focusSearch,
   });
 
-  console.log(`Registering AI hotkey: ${hotkeysConfig.actions.toggleAI.keys}`);
-  useHotkeys(hotkeysConfig.actions.toggleAI.keys, () => {
+  useHotkeys(hotkeysConfig.actions.toggleAI?.keys || '', () => {
     console.log(`AI hotkey triggered: ${hotkeysConfig.actions.toggleAI.keys}`);
     onToggleAI?.();
   }, {
     preventDefault: true,
-    enableOnFormTags: false
+    enableOnFormTags: false,
+    enabled: isWeb && !!hotkeysConfig.actions.toggleAI,
   });
 
-  console.log(`Registering new item hotkey: ${hotkeysConfig.actions.newItem.keys}`);
   // Context-aware "New" action
-  useHotkeys(hotkeysConfig.actions.newItem.keys, () => {
+  useHotkeys(hotkeysConfig.actions.newItem?.keys || '', () => {
     console.log(`New item hotkey triggered: ${hotkeysConfig.actions.newItem.keys}`);
     const currentContext = hotkeysConfig.contextual[pathname as keyof typeof hotkeysConfig.contextual];
     if (currentContext?.newItem) {
@@ -70,26 +113,27 @@ export function useNavigationHotkeys({
       // TODO: Implement actual new item creation based on context
     }
   }, {
-    enableOnFormTags: false
+    enableOnFormTags: false,
+    enabled: isWeb && !!hotkeysConfig.actions.newItem,
   });
 
-  console.log(`Registering help hotkey: ${hotkeysConfig.actions.help.keys}`);
   // Help shortcut
-  useHotkeys(hotkeysConfig.actions.help.keys, () => {
+  useHotkeys(hotkeysConfig.actions.help?.keys || '', () => {
     console.log(`Help hotkey triggered: ${hotkeysConfig.actions.help.keys}`);
     router.push(hotkeysConfig.actions.help.route as any);
   }, {
     preventDefault: true,
-    enableOnFormTags: false
+    enableOnFormTags: false,
+    enabled: isWeb && !!hotkeysConfig.actions.help,
   });
 
-  console.log(`Registering close modal hotkey: ${hotkeysConfig.actions.closeModals.keys}`);
   // Close modals
-  useHotkeys(hotkeysConfig.actions.closeModals.keys, () => {
+  useHotkeys(hotkeysConfig.actions.closeModals?.keys || '', () => {
     console.log(`Close modal hotkey triggered: ${hotkeysConfig.actions.closeModals.keys}`);
     onCloseModals?.();
   }, {
     preventDefault: true,
-    enableOnFormTags: false
+    enableOnFormTags: false,
+    enabled: isWeb && !!hotkeysConfig.actions.closeModals,
   });
 }

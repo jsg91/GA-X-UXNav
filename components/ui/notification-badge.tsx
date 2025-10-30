@@ -9,9 +9,10 @@ interface NotificationBadgeProps {
   icon: string;
   onPress: () => void;
   size?: number;
+  isActive?: boolean;
 }
 
-export function NotificationBadge({ count, icon, onPress, size = 24 }: NotificationBadgeProps) {
+export function NotificationBadge({ count, icon, onPress, size = 24, isActive = false }: NotificationBadgeProps) {
   return (
     <Button
       onPress={onPress}
@@ -21,7 +22,7 @@ export function NotificationBadge({ count, icon, onPress, size = 24 }: Notificat
         backgroundColor: 'rgba(0, 0, 0, 0.05)',
         transform: 'scale(1.02)',
       }}
-      padding="$2"
+      padding="$1"
       position="relative"
       pressStyle={{
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
@@ -29,7 +30,7 @@ export function NotificationBadge({ count, icon, onPress, size = 24 }: Notificat
       }}
       size="$2"
     >
-      <IconSymbol name={icon} color="$color" size={size} />
+      <IconSymbol name={icon} color={isActive ? "$tint" : "$color"} size={size} />
       <Badge count={count} />
     </Button>
   );
