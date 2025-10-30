@@ -1,9 +1,10 @@
 import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, StatusBar, useWindowDimensions } from 'react-native';
+import { Animated, Dimensions, Modal, StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, ScrollView, View, XStack, YStack } from 'tamagui';
 
+import { NavigationDrawer } from '@/components/navigation-drawer';
 import { ProfileMenu } from '@/components/profile-menu';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { SidebarNavigation } from '@/components/sidebar-navigation';
@@ -12,8 +13,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { SearchBar } from '@/components/ui/search-bar';
 import { ANIMATION_DELAYS } from '@/constants/animation-delays';
-import { AI_MODAL_DIMENSIONS, HEADER_HEIGHT, ICON_SIZES, SIDEBAR_BREAKPOINT } from '@/constants/layout';
-import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, NAVIGATION_CONFIG, Role } from '@/constants/NAVIGATION';
+import { AI_MODAL_DIMENSIONS, HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, SIDEBAR_BREAKPOINT } from '@/constants/layout';
+import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, NAVIGATION_CONFIG, Role, ROLE_CONFIG } from '@/constants/NAVIGATION';
 import { OPACITY } from '@/constants/opacity';
 import { REFOCUS_DELAYS } from '@/constants/refocus-delays';
 import { AI_MODAL_SHADOW, BOTTOM_NAV_SHADOW } from '@/constants/shadow-styles';
@@ -41,6 +42,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { width, height } = useWindowDimensions();
+  const screenWidth = Dimensions.get('window').width;
   const [notificationCount] = useState(3); // Mock notification count
   const [messageCount] = useState(2); // Mock message count
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -50,6 +52,10 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiMessageInput, setAIMessageInput] = useState('');
+  const [isHamburgerMenuOpen, setIsHamburgerMenuOpen] = useState(false);
+  const [drawerSlideProgress, setDrawerSlideProgress] = useState(0);
+  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+  const [roleSwitcherSlideProgress, setRoleSwitcherSlideProgress] = useState(0);
   const [aiMessages, setAIMessages] = useState<{ id: string; text: string; sender: 'user' | 'ai'; timestamp: Date }[]>([
     {
       id: 'welcome',
@@ -253,6 +259,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const handleCloseModals = () => {
     setShowHelpOverlay(false);
     setIsAIModalOpen(false);
+    setIsHamburgerMenuOpen(false);
+    setIsRoleSwitcherOpen(false);
     setSidebarExpanded(false);
     // Close any other modals/dropdowns
   };
@@ -267,7 +275,34 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   console.log('ResponsiveNavigation: Hotkeys initialized');
 
   // Generate navigation items for bottom nav based on current role
-  const bottomNavItems = useNavigationItems(currentRole, { forLargeScreen: false });
+  const allBottomNavItems = useNavigationItems(currentRole, { forLargeScreen: false });
+  const mainBottomNavItems = useNavigationItems(currentRole, { forLargeScreen: false, forSmallScreenMainOnly: true });
+  const nonMainBottomNavItems = allBottomNavItems.filter(item =>
+    !mainBottomNavItems.some(mainItem => mainItem.id === item.id)
+  );
+
+  // Use main items only on small screens, all items on large screens
+  const bottomNavItems = !showSidebar ? mainBottomNavItems : allBottomNavItems;
+
+  // For drawer, show all items when it's a pilot
+  const drawerItems = currentRole?.id === 'pilot' ? allBottomNavItems : nonMainBottomNavItems;
+
+  // Create role groups for the role switcher drawer
+  const roleGroups = useMemo(() => {
+    return ROLE_CONFIG.groups.map(group => ({
+      name: group.name,
+      icon: group.icon,
+      roles: group.roles.map(role => ({
+        id: role.id,
+        name: role.name,
+        href: '', // Not used for role selection
+        icon: role.icon,
+        label: role.label,
+        customPage: false,
+        comingSoon: 'comingSoon' in role ? role.comingSoon : false,
+      }))
+    })).filter(group => group.roles.length > 0);
+  }, []);
 
   // Get current tab index based on pathname and screen size
   const getCurrentTabIndex = () => {
@@ -751,18 +786,110 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         </Modal>
       )}
 
-      {/* Header - Full width */}
-      <View
-        backgroundColor="$backgroundSecondary"
-        borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
-        borderBottomWidth="$0.5"
-        height={56}
-        position="relative"
-        shadowColor={resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : '$shadowColor'}
-        shadowOffset={{ width: 0, height: 1 }}
-        shadowOpacity={resolvedTheme === 'dark' ? 0.3 : 0.1}
-        shadowRadius={2}
+      {/* Navigation Drawer for additional navigation items */}
+      <NavigationDrawer
+        isOpen={isHamburgerMenuOpen}
+        onClose={() => setIsHamburgerMenuOpen(false)}
+        items={drawerItems}
+        currentPath={pathname}
+        onNavigate={handleTabPress}
+        onSlideProgress={setDrawerSlideProgress}
+        title={`${currentRole?.name || 'User'} Navigation`}
+        onChangeRole={() => setIsRoleSwitcherOpen(true)}
+        showRoleHint={currentRole?.id === 'pilot'}
+      />
+
+      {/* Role Switcher Drawer - Small screens use left drawer, large screens use modal */}
+      {width < SIDEBAR_BREAKPOINT ? (
+        <NavigationDrawer
+          isOpen={isRoleSwitcherOpen}
+          onClose={() => setIsRoleSwitcherOpen(false)}
+          groups={roleGroups}
+          title="Change Role"
+          side="left"
+          onSlideProgress={setRoleSwitcherSlideProgress}
+          onRoleSelect={(roleId) => {
+            let selectedRole: Role | undefined;
+
+            for (const group of ROLE_CONFIG.groups) {
+              selectedRole = group.roles.find(role => role.id === roleId);
+              if (selectedRole) break;
+            }
+
+            if (selectedRole) {
+              setCurrentRole(selectedRole);
+              setIsRoleSwitcherOpen(false);
+            }
+          }}
+          currentRoleId={currentRole?.id}
+        />
+      ) : (
+        isRoleSwitcherOpen && (
+          <Modal
+            onRequestClose={createCloseHandler(setIsRoleSwitcherOpen)}
+            animationType="fade"
+            transparent={true}
+            visible={isRoleSwitcherOpen}
+          >
+            <View
+              onPress={createCloseHandler(setIsRoleSwitcherOpen)}
+              alignItems="flex-start"
+              bottom={0}
+              flex={1}
+              justifyContent="flex-start"
+              left={0}
+              position="absolute"
+              right={0}
+              top={0}
+              zIndex={Z_INDEX.aiModalOverlay}
+            >
+              <View
+                onPress={stopPropagation}
+                backgroundColor="$backgroundSecondary"
+                borderRadius="$5"
+                left={HEADER_PADDING}
+                maxHeight={500}
+                maxWidth={400}
+                minWidth={300}
+                padding="$4"
+                top={HEADER_HEIGHT}
+                width="auto"
+              >
+                <RoleSwitcher
+                  currentRole={currentRole}
+                  onRoleChange={(role) => {
+                    setCurrentRole(role);
+                    setIsRoleSwitcherOpen(false);
+                  }}
+                />
+              </View>
+            </View>
+          </Modal>
+        )
+      )}
+
+      {/* Animated wrapper for entire interface */}
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [{
+            translateX: (drawerSlideProgress * -Math.min(300, screenWidth * 0.8)) + 
+                       (roleSwitcherSlideProgress * Math.min(300, screenWidth * 0.8))
+          }]
+        }}
       >
+        {/* Header - Full width */}
+        <View
+          backgroundColor="$backgroundSecondary"
+          borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
+          borderBottomWidth="$0.5"
+          height={56}
+          position="relative"
+          shadowColor={resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : '$shadowColor'}
+          shadowOffset={{ width: 0, height: 1 }}
+          shadowOpacity={resolvedTheme === 'dark' ? 0.3 : 0.1}
+          shadowRadius={2}
+        >
         <XStack
           alignItems="center"
           height="100%"
@@ -785,6 +912,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             <RoleSwitcher
               currentRole={currentRole}
               onRoleChange={handleRoleChange}
+              onOpenDrawer={() => setIsRoleSwitcherOpen(true)}
             />
             
             {/* News icon - on all platforms */}
@@ -896,19 +1024,16 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             <ProfileMenu />
           </XStack>
         </XStack>
-      </View>
+        </View>
 
-
-      {/* Main Content Area - Fixed padding reserved immediately on web */}
-      <View
-        animation="quick"
-        flex={1}
-        minHeight={0}
-        paddingBottom={!showSidebar ? (width < SIDEBAR_BREAKPOINT ? 78 : 68) : 0} // Account for bottom nav height + extra padding on small screens
-        paddingLeft={shouldReserveSidebarSpace ? 72 : 0}
-        position="relative"
-        transition="padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-      >
+        {/* Main Content Area - Fixed padding reserved immediately on web */}
+        <View
+          flex={1}
+          minHeight={0}
+          paddingBottom={!showSidebar ? (width < SIDEBAR_BREAKPOINT ? 78 : 68) : 0} // Account for bottom nav height + extra padding on small screens
+          paddingLeft={shouldReserveSidebarSpace ? 72 : 0}
+          position="relative"
+        >
         {/* Sidebar Navigation - Overlays content on large screens */}
         {shouldReserveSidebarSpace && (
           <SidebarNavigation
@@ -918,11 +1043,11 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
           />
         )}
 
-        {/* Main Content */}
-        {children}
-      </View>
+          {/* Main Content */}
+          {children}
+        </View>
 
-      {/* Floating AI Assistant Button - All screen sizes - Outside content area */}
+        {/* Floating AI Assistant Button - All screen sizes - Outside content area */}
       <Button
         style={isWeb ? {
           userSelect: 'none',
@@ -1028,6 +1153,29 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                 </Button>
               );
             })}
+            {/* Hamburger menu for non-main items on small screens */}
+            {!showSidebar && nonMainBottomNavItems.length > 0 && (
+              <Button
+                style={{
+                  userSelect: 'none',
+                }}
+                onPress={() => setIsHamburgerMenuOpen(!isHamburgerMenuOpen)}
+                alignItems="center"
+                backgroundColor="transparent"
+                flex={1}
+                flexDirection="column"
+                gap="$0.5"
+                justifyContent="center"
+                minHeight={56}
+                paddingVertical="$1.5"
+              >
+                <IconSymbol
+                  name="menu"
+                  color={getIconColor(false, resolvedTheme)}
+                  size={ICON_SIZES.large}
+                />
+              </Button>
+            )}
           </View>
           
           {/* FAB - Floating Action Button in center */}
@@ -1078,6 +1226,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
           </View>
         </>
       )}
+      </Animated.View>
     </SafeAreaView>
   );
 }

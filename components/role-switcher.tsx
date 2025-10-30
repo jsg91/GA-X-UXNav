@@ -11,7 +11,6 @@ import { getActiveColor, getActiveFontWeight, getActiveOpacity } from '@/utils/a
 import { stopPropagation } from '@/utils/event-handlers';
 import { INTERACTIVE_COLORS, getTintBackground, getTintBackgroundHover, getTintBackgroundPress, getTintBorder, getTintBorderHover } from '@/utils/interactive-colors';
 import { MENU_ITEM_WITH_HEIGHT_STYLES, getMenuItemHoverStyle, getMenuItemPressStyle } from '@/utils/menu-item-styles';
-import { filterVisibleItems } from '@/utils/navigation-items';
 import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
 import { isWeb } from '@/utils/platform';
 import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
@@ -28,9 +27,10 @@ import {
 interface RoleSwitcherProps {
   currentRole: Role;
   onRoleChange: (role: Role) => void;
+  onOpenDrawer?: () => void; // Optional callback to open external drawer on small screens
 }
 
-export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
+export function RoleSwitcher({ currentRole, onRoleChange, onOpenDrawer }: RoleSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { resolvedTheme } = useThemeContext();
   const isDark = resolvedTheme === 'dark';
@@ -38,19 +38,21 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
   
   const isSmallScreen = width < SIDEBAR_BREAKPOINT;
   const maxPanelHeight = calculateMaxPanelHeight(windowHeight);
+  
+  // On small screens with drawer support, use external drawer instead of modal
+  const useExternalDrawer = isSmallScreen && onOpenDrawer;
 
   const groupedRoles = useMemo(() => {
     return ROLE_CONFIG.groups.map(group => ({
       ...group,
-      roles: filterVisibleItems(group.roles as readonly Role[]),
+      roles: group.roles,
     })).filter(group => group.roles.length > 0);
   }, []);
 
   const handleRoleSelect = (role: Role) => {
-    // Check if role requires permission
-    if ('permissionRequired' in role && role.permissionRequired === true) {
-      AlertUtils.showPermissionRequired(role.name);
-      setIsOpen(false);
+    // Check if role is coming soon
+    if ('comingSoon' in role && role.comingSoon === true) {
+      // Coming soon roles are not selectable
       return;
     }
 
@@ -103,17 +105,11 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
             >
               <XStack alignItems="center" gap="$2.5">
                 <IconSymbol
-                  style={{ opacity: OPACITY.veryLight }}
-                  name="chevron-down"
-                  color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
-                  size={ICON_SIZES.medium}
-                />
-                <IconSymbol
                   name={group.icon as any}
                   color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
                   size={ICON_SIZES.large}
                 />
-                <ThemedText style={{ opacity: OPACITY.subtle }} color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$7" marginLeft="$1">
+                <ThemedText style={{ opacity: OPACITY.subtle }} color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$4" marginLeft="$1">
                   {group.name}
                 </ThemedText>
               </XStack>
@@ -122,25 +118,27 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
             {/* Group Roles - Tree Child Nodes */}
             {group.roles.map((role) => {
               const isSelected = currentRole.id === role.id;
+              const isComingSoon = 'comingSoon' in role && role.comingSoon === true;
               return (
                 <Button
                   key={role.id}
                   onPress={() => handleRoleSelect(role)}
                   {...MENU_ITEM_WITH_HEIGHT_STYLES}
-                  hoverStyle={getMenuItemHoverStyle(true)}
-                  pressStyle={getMenuItemPressStyle(true)}
+                  hoverStyle={isComingSoon ? undefined : getMenuItemHoverStyle(true)}
+                  pressStyle={isComingSoon ? undefined : getMenuItemPressStyle(true)}
+                  opacity={isComingSoon ? 0.6 : 1}
                 >
                   <XStack alignItems="center" gap="$3" justifyContent="flex-start" width="100%">
-                    {/* Spacer to align role icons with group icons: chevron (16px) + gap ($2.5 = 10px) = 26px */}
-                    <XStack width={10} />
+                    {/* Spacer to align role icons with group icons */}
+                    <XStack width={2} />
                     <IconSymbol
                       style={{ opacity: getActiveOpacity(isSelected) }}
                       name={role.icon as any}
-                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
+                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : (isComingSoon ? '#888888' : '#FFFFFF')) : (isComingSoon ? '#888888' : getActiveColor(isSelected))}
                       size={ICON_SIZES.large}
                     />
                     <ThemedText
-                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
+                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : (isComingSoon ? '#888888' : '#FFFFFF')) : (isComingSoon ? '#888888' : getActiveColor(isSelected))}
                       flex={1}
                       fontSize="$5"
                       fontWeight={getActiveFontWeight(isSelected) as any}
@@ -148,10 +146,10 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                     >
                       {role.label}
                     </ThemedText>
-                    {'permissionRequired' in role && role.permissionRequired === true && (
+                    {isComingSoon && (
                       <IconSymbol
                         style={{ opacity: OPACITY.light }}
-                        name="lock"
+                        name="clock-outline"
                         color="$tabIconDefault"
                         size={ICON_SIZES.small}
                       />
@@ -177,7 +175,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
     <>
       <YStack height="100%" position="relative" zIndex={Z_INDEX.sidebar}>
         <Button
-          onPress={createToggleHandler(setIsOpen)}
+          onPress={useExternalDrawer ? onOpenDrawer : createToggleHandler(setIsOpen)}
           backgroundColor={getTintBackground(isDark)}
           borderColor={getTintBorder(isDark)}
           borderRadius="$3"
@@ -213,13 +211,14 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
         </Button>
       </YStack>
 
-      {/* Modal with side panel - works on all platforms */}
-      <Modal
-        onRequestClose={createCloseHandler(setIsOpen)}
-        animationType="fade"
-        transparent={true}
-        visible={isOpen}
-      >
+      {/* Modal with side panel - only show if not using external drawer */}
+      {!useExternalDrawer && (
+        <Modal
+          onRequestClose={createCloseHandler(setIsOpen)}
+          animationType="fade"
+          transparent={true}
+          visible={isOpen}
+        >
         <View
           onPress={createCloseHandler(setIsOpen)}
           alignItems="flex-start"
@@ -248,6 +247,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
           </View>
         </View>
       </Modal>
+      )}
     </>
   );
 }

@@ -8,6 +8,10 @@ interface UseNavigationItemsOptions {
    * If false, filter items for all screens (bottom nav)
    */
   forLargeScreen?: boolean;
+  /**
+   * If true, only show main navigation items (for small screens)
+   */
+  forSmallScreenMainOnly?: boolean;
 }
 
 /**
@@ -18,11 +22,20 @@ export function useNavigationItems(
   currentRole?: Role,
   options: UseNavigationItemsOptions = {}
 ): GeneratedNavItem[] {
-  const { forLargeScreen = false } = options;
+  const { forLargeScreen = false, forSmallScreenMainOnly = false } = options;
 
   return useMemo(() => {
     if (currentRole) {
-      return generateNavigationForRole(currentRole);
+      const items = generateNavigationForRole(currentRole);
+      if (forSmallScreenMainOnly) {
+        // Filter to only main items for small screens
+        return items.filter(item => {
+          // Check if this item has main: true in the role navigation config
+          const navConfig = currentRole.navigation?.[item.id];
+          return navConfig && typeof navConfig === 'object' && 'main' in navConfig && navConfig.main === true;
+        });
+      }
+      return items;
     }
     // Fallback to old navigation config if no role
     // Convert BaseNavItem to GeneratedNavItem format for consistency
@@ -41,6 +54,6 @@ export function useNavigationItems(
         label: item.name,
         customPage: false,
       }));
-  }, [currentRole, forLargeScreen]);
+  }, [currentRole, forLargeScreen, forSmallScreenMainOnly]);
 }
 

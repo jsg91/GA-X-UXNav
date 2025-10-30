@@ -20,8 +20,7 @@ export interface Role {
   name: string;
   icon: string;
   label: string;
-  visible: boolean;
-  permissionRequired?: boolean;
+  comingSoon?: boolean;
   navigation?: Record<string, any>;
   context?: string;
 }
@@ -103,17 +102,44 @@ export const ROLE_CONFIG = {
           name: 'Pilot',
           icon: 'airplane',
           label: 'Pilot',
-          visible: true,
           navigation: {
-            aircrafts: {},
-            logbookentries: {},
-            reservations: {},
-            users: { label: 'Find Instructors', icon: 'school' },
-            aerodromes: {},
+            dashboard: {
+              route: '/(tabs)/',
+              label: 'Dashboard',
+              icon: 'view-dashboard',
+              customPage: true,
+              main: true,
+            },
             'route-planner': {
               route: '/(tabs)/route-planner',
-              label: 'Route Planner',
+              label: 'Plan',
               icon: 'map',
+              customPage: true,
+              main: true,
+            },
+            aircrafts: { label: 'Fly', main: true },
+            documents: { main: true },
+            checklists: { main: true },
+            logbookentries: { label: 'Logbook', main: true },
+            reservations: {},
+            club: {
+              route: '/(tabs)/club',
+              label: 'Club',
+              icon: 'account-group',
+              customPage: true,
+            },
+            users: { label: 'Instructors', icon: 'school' },
+            aerodromes: {},
+            'find-dpe': {
+              route: '/(tabs)/find-dpe',
+              label: 'DPE',
+              icon: 'clipboard-check',
+              customPage: true,
+            },
+            'find-ame': {
+              route: '/(tabs)/find-ame',
+              label: 'AME',
+              icon: 'stethoscope',
               customPage: true,
             },
           },
@@ -123,7 +149,6 @@ export const ROLE_CONFIG = {
           name: 'Student',
           icon: 'account-school',
           label: 'Student',
-          visible: true,
           context: 'pilot',  // Students use pilot context
           navigation: {
             logbookentries: {},
@@ -142,7 +167,6 @@ export const ROLE_CONFIG = {
           name: 'Instructor',
           icon: 'school',
           label: 'Instructor',
-          visible: true,
           navigation: {
             users: { label: 'My Students', icon: 'account-school' },
             reservations: {},
@@ -155,7 +179,7 @@ export const ROLE_CONFIG = {
           name: 'Safety Officer',
           icon: 'shield-alert',
           label: 'Safety Officer',
-          visible: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             incidents: {
@@ -178,7 +202,7 @@ export const ROLE_CONFIG = {
           name: 'Passenger',
           icon: 'seat-passenger',
           label: 'Passenger',
-          visible: true,
+          comingSoon: true,
           context: 'pilot',
           navigation: {
             reservations: { label: 'My Flights' },
@@ -196,7 +220,6 @@ export const ROLE_CONFIG = {
           name: 'Organization Admin',
           icon: 'domain',
           label: 'Organization',
-          visible: true,
           context: 'platform_admin',
           navigation: {
             organizations: {},
@@ -220,7 +243,6 @@ export const ROLE_CONFIG = {
           name: 'Flight School Admin',
           icon: 'school',
           label: 'Flightschool',
-          visible: true,
           context: 'flightschool_admin',
           navigation: {
             users: { label: 'Students' },
@@ -245,7 +267,6 @@ export const ROLE_CONFIG = {
           name: 'Flight Club Admin',
           icon: 'account-group',
           label: 'Flightclub',
-          visible: true,
           context: 'flightclub_admin',
           navigation: {
             aircrafts: {},
@@ -270,7 +291,7 @@ export const ROLE_CONFIG = {
           name: 'FBO Admin',
           icon: 'airplane-landing',
           label: 'FBO',
-          visible: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             aerodromes: {},
@@ -293,7 +314,6 @@ export const ROLE_CONFIG = {
           name: 'Aerodrome Admin',
           icon: 'airport',
           label: 'Aerodrome',
-          visible: true,
           context: 'aerodrome_admin',
           navigation: {
             aerodromes: {},
@@ -322,7 +342,6 @@ export const ROLE_CONFIG = {
           name: 'Maintenance',
           icon: 'wrench',
           label: 'Maintenance',
-          visible: true,
           navigation: {
             aircrafts: {},
             maintenance: {},
@@ -351,7 +370,7 @@ export const ROLE_CONFIG = {
           name: 'Experimental Builder',
           icon: 'hammer-wrench',
           label: 'Experimental Builder',
-          visible: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             'my-projects': {
@@ -374,7 +393,7 @@ export const ROLE_CONFIG = {
           name: 'Manufacturer',
           icon: 'factory',
           label: 'Manufacturing',
-          visible: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             products: {
@@ -397,7 +416,7 @@ export const ROLE_CONFIG = {
           name: 'Inspector',
           icon: 'clipboard-search',
           label: 'Consultant / Inspector',
-          visible: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             inspections: {
@@ -426,8 +445,7 @@ export const ROLE_CONFIG = {
           name: 'Designated Pilot Examiner',
           icon: 'clipboard-check',
           label: 'DPE',
-          visible: true,
-          permissionRequired: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             examinations: {
@@ -449,8 +467,7 @@ export const ROLE_CONFIG = {
           name: 'Aviation Medical Examiner',
           icon: 'stethoscope',
           label: 'AME',
-          visible: true,
-          permissionRequired: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             'medical-exams': {
@@ -478,8 +495,7 @@ export const ROLE_CONFIG = {
           name: 'Insurance Broker',
           icon: 'shield-account',
           label: 'Insurance Broker',
-          visible: true,
-          permissionRequired: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             policies: {
@@ -507,8 +523,7 @@ export const ROLE_CONFIG = {
           name: 'CAA',
           icon: 'shield-check',
           label: 'CAA',
-          visible: true,
-          permissionRequired: true,
+          comingSoon: true,
           navigation: {
             aircrafts: {},
             registrations: {
@@ -536,8 +551,7 @@ export const ROLE_CONFIG = {
           name: 'Customs',
           icon: 'passport',
           label: 'Custom',
-          visible: true,
-          permissionRequired: true,
+          comingSoon: true,
           context: 'default',
           navigation: {
             declarations: {
@@ -559,7 +573,7 @@ export const ROLE_CONFIG = {
   ] as const satisfies readonly RoleGroup[],
 
   // ===== STANDALONE ADMIN ROLE =====
-  adminRole: { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', visible: true, permissionRequired: true },
+  adminRole: { id: 'admin', name: 'Admin', icon: 'cog', label: 'Admin (platform)', comingSoon: true },
 
   // ===== HIERARCHICAL NAVIGATION HELPERS =====
   /**
@@ -585,17 +599,17 @@ export const ROLE_CONFIG = {
   },
 
   /**
-   * Get roles that don't require special permissions
+   * Get roles that are available now
    */
   getBasicRoles(): Role[] {
-    return this.getAllRoles().filter(role => role.visible && !role.permissionRequired);
+    return this.getAllRoles().filter(role => !role.comingSoon);
   },
 
   /**
-   * Get roles that require special permissions
+   * Get roles that are coming soon
    */
-  getPermissionRequiredRoles(): Role[] {
-    return this.getAllRoles().filter(role => role.visible && role.permissionRequired);
+  getComingSoonRoles(): Role[] {
+    return this.getAllRoles().filter(role => role.comingSoon);
   },
 
   /**
@@ -605,7 +619,7 @@ export const ROLE_CONFIG = {
     const group = this.groups.find(g => g.name === groupName);
     if (!group) return [];
 
-    return group.roles.filter(role => role.visible);
+    return group.roles;
   },
 } as const;
 
