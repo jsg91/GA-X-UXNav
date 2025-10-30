@@ -4,7 +4,7 @@ import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
 import { useThemeContext } from '@/hooks/use-theme-context';
 import { usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Modal, Platform, useWindowDimensions } from 'react-native';
+import { Modal, useWindowDimensions } from 'react-native';
 import {
   Button,
   ScrollView,
@@ -12,6 +12,18 @@ import {
   XStack,
   YStack
 } from 'tamagui';
+import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
+import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
+import { TRANSFORM_SCALES } from '@/constants/transform-scales';
+import { isTabActive } from '@/utils/navigation';
+import { filterVisibleItems } from '@/utils/navigation-items';
+import { stopPropagation } from '@/utils/event-handlers';
+import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
+import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
+import { getMenuItemHoverStyle, getMenuItemPressStyle, MENU_ITEM_BUTTON_STYLES } from '@/utils/menu-item-styles';
+import { getDestructiveColor, INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { getActiveColor } from '@/utils/active-state';
+import { navigateTo } from '@/utils/router';
 import { ThemedText } from './themed-text';
 
 export function ProfileMenu() {
@@ -20,13 +32,7 @@ export function ProfileMenu() {
   const router = useRouter();
   const pathname = usePathname();
   const { height: windowHeight } = useWindowDimensions();
-  const isWeb = Platform.OS === 'web';
-  
-  // Header height - matches the header minHeight in responsive-navigation
-  const HEADER_HEIGHT = 56;
-  // Header padding ($3) - matches paddingHorizontal in responsive-navigation header
-  const HEADER_PADDING = 12; // $3 = 12px
-  const maxPanelHeight = windowHeight > 0 ? windowHeight - HEADER_HEIGHT - 20 : 600;
+  const maxPanelHeight = calculateMaxPanelHeight(windowHeight);
 
   const handleLogout = () => {
     AlertUtils.showLogoutConfirmation(() => {
@@ -46,29 +52,26 @@ export function ProfileMenu() {
 
     // Navigate to the route if href exists
     if (item.href) {
-      router.push(item.href as any);
+      navigateTo(item.href);
     }
   };
 
   const isItemActive = (item: typeof NAVIGATION_CONFIG.profileMenu.items[number]) => {
-    if (!item.href) return false;
-    if (item.href === '/(tabs)/' && pathname === '/') return true;
-    if (item.href && pathname.includes(item.href.replace('/(tabs)/', ''))) return true;
-    return item.href === pathname;
+    return isTabActive(item.href, pathname);
   };
 
-  const visibleItems = NAVIGATION_CONFIG.profileMenu.items.filter(item => item.visible);
+  const visibleItems = filterVisibleItems(NAVIGATION_CONFIG.profileMenu.items);
 
   const renderDropdownContent = () => (
     <>
       <YStack 
-        borderBottomColor="$borderColor" 
+        borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'} 
         borderBottomWidth="$0.5"
         padding="$4"
         paddingBottom="$3"
       >
         <XStack justifyContent="space-between">
-          <ThemedText color="$color" fontSize="$5" fontWeight="$6">
+          <ThemedText color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$6">
             Profile Menu
           </ThemedText>
           <Button
@@ -79,8 +82,8 @@ export function ProfileMenu() {
           >
             <IconSymbol
               name="close"
-              color="$color"
-              size={20}
+              color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
+              size={ICON_SIZES.medium}
             />
           </Button>
         </XStack>
@@ -92,36 +95,34 @@ export function ProfileMenu() {
       >
         {visibleItems.map((item) => {
           const isActive = isItemActive(item);
+          const isLogout = item.id === 'logout';
+          const iconColor = isLogout 
+            ? getDestructiveColor(resolvedTheme === 'dark') 
+            : (resolvedTheme === 'dark' ? (isActive ? '$tint' : '#FFFFFF') : getActiveColor(isActive));
+          const textColor = isLogout 
+            ? getDestructiveColor(resolvedTheme === 'dark') 
+            : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color');
+          
           return (
             <Button
               key={item.id}
               onPress={() => handleMenuItemPress(item)}
-              backgroundColor="transparent"
-              borderBottomWidth={0}
-              borderRadius={0}
-              hoverStyle={isWeb ? {
-                backgroundColor: 'rgba(0, 122, 255, 0.08)',
-              } : undefined}
-              paddingHorizontal="$4"
-              paddingVertical="$3"
-              pressStyle={{
-                backgroundColor: 'rgba(0, 122, 255, 0.12)',
-              }}
+              {...MENU_ITEM_BUTTON_STYLES}
+              hoverStyle={getMenuItemHoverStyle(true)}
+              pressStyle={getMenuItemPressStyle(true)}
             >
               <XStack alignItems="center" gap="$3" justifyContent="flex-start" width="100%">
                 <IconSymbol
                   name={item.icon as any}
-                  color={item.id === 'logout' 
-                    ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') 
-                    : (isActive ? "$tint" : "$color")}
-                  size={18}
+                  color={iconColor}
+                  size={ICON_SIZES.small}
                 />
                 <ThemedText
-                  color={item.id === 'logout' ? (resolvedTheme === 'dark' ? '#FF453A' : '#FF3B30') : '$color'}
+                  color={textColor}
                   flex={1}
-                  textAlign="left"
                   fontSize="$4"
                   fontWeight="$4"
+                  textAlign="left"
                 >
                   {item.name}
                 </ThemedText>
@@ -137,40 +138,40 @@ export function ProfileMenu() {
     <>
       {/* Profile Menu Button */}
       <Button
-        onPress={() => setIsVisible(!isVisible)}
+        onPress={createToggleHandler(setIsVisible)}
+        alignItems="center"
         backgroundColor="transparent"
         height="100%"
         hoverStyle={{
-          backgroundColor: 'rgba(0, 0, 0, 0.05)',
-          transform: 'scale(1.02)',
+          backgroundColor: INTERACTIVE_COLORS.hover,
+          transform: `scale(${TRANSFORM_SCALES.hover})`,
         }}
+        justifyContent="center"
         padding="$2"
         pressStyle={{
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          transform: 'scale(0.98)',
+          backgroundColor: INTERACTIVE_COLORS.press,
+          transform: `scale(${TRANSFORM_SCALES.press})`,
         }}
         size="$2"
-        alignItems="center"
-        justifyContent="center"
       >
         <IconSymbol
           name="account"
-          color="$color"
-          size={24}
+          color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
+          size={ICON_SIZES.xlarge}
         />
       </Button>
 
       {/* Modal with side panel - works on all platforms, same style as role switcher */}
       <Modal
-        onRequestClose={() => setIsVisible(false)}
+        onRequestClose={createCloseHandler(setIsVisible)}
         animationType="fade"
         transparent={true}
         visible={isVisible}
       >
         <View
-          onPress={() => setIsVisible(false)}
+          onPress={createCloseHandler(setIsVisible)}
           alignItems="flex-end"
-          backgroundColor="rgba(0, 0, 0, 0.4)"
+          backgroundColor={INTERACTIVE_COLORS.modalOverlay}
           bottom={0}
           flex={1}
           justifyContent="flex-start"
@@ -180,17 +181,16 @@ export function ProfileMenu() {
           top={0}
         >
           <View
-            onPress={(e: any) => e.stopPropagation()}
-            backgroundColor="$background"
+            onPress={stopPropagation}
+            backgroundColor="$backgroundSecondary"
+            borderColor={resolvedTheme === 'dark' ? '#333333' : undefined}
+            borderWidth={resolvedTheme === 'dark' ? '$0.5' : 0}
             borderRadius="$5"
             maxHeight={maxPanelHeight}
-            maxWidth={380}
-            minWidth={280}
+            maxWidth={MODAL_PANEL_DIMENSIONS.maxWidth}
+            minWidth={MODAL_PANEL_DIMENSIONS.minWidth}
             right={HEADER_PADDING}
-            shadowColor="$shadowColor"
-            shadowOffset={{ width: 2, height: 0 }}
-            shadowOpacity={0.25}
-            shadowRadius={10}
+            {...MODAL_PANEL_SHADOW}
             top={HEADER_HEIGHT}
             width="auto"
           >

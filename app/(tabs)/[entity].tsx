@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 
 import { TabPlaceholder } from '@/components/ui/tab-placeholder';
-import { EntityName, getPageInfoForEntity, getPageInfoFromNavConfig, XUISCHEMA_REGISTRY } from '@/constants/NAVIGATION';
+import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, XUISCHEMA_REGISTRY } from '@/constants/NAVIGATION';
 import { useRoleContext } from '@/hooks/use-role-context';
 
 /**
@@ -16,22 +16,8 @@ export default function DynamicEntityScreen() {
   const { entity } = useLocalSearchParams<{ entity: string }>();
   const { currentRole } = useRoleContext();
 
-  // Map route names to entity names (e.g., 'logbook' -> 'logbookentries')
-  const entityNameMap: Record<string, EntityName> = {
-    'logbook': 'logbookentries',
-    'aircrafts': 'aircrafts',
-    'reservations': 'reservations',
-    'aerodromes': 'aerodromes',
-    'maintenance': 'maintenance',
-    'events': 'events',
-    'documents': 'documents',
-    'checklists': 'checklists',
-    'techlog': 'techlog',
-    'organizations': 'organizations',
-    'users': 'users',
-  };
-
-  const entityName = (entityNameMap[entity as string] || entity) as EntityName;
+  // Map route names to entity names using derived mapping
+  const entityName = getEntityNameForRoute(entity as string) as EntityName;
   
   // First, try to get page info from NAVIGATION_CONFIG (top nav routes)
   const navConfigInfo = getPageInfoFromNavConfig(entity as string);

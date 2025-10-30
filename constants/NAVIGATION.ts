@@ -1,3 +1,5 @@
+import { buildRoute } from '@/utils/navigation';
+
 // Base navigation item interface
 interface BaseNavItem {
   id: string;
@@ -884,24 +886,82 @@ export interface GeneratedNavItem {
 }
 
 /**
- * Map entity names to route-friendly names (e.g., 'logbookentries' -> 'logbook')
+ * Get route-friendly name for an entity (derived from XUISCHEMA_REGISTRY)
+ * Uses display.plural if it differs from entityName, otherwise uses entityName
+ * This replaces the static ENTITY_ROUTE_MAP constant
  */
-function getRouteNameForEntity(entityName: EntityName | string): string {
-  const routeMap: Record<string, string> = {
-    'logbookentries': 'logbook',
-    'aircrafts': 'aircrafts',
-    'reservations': 'reservations',
-    'aerodromes': 'aerodromes',
-    'maintenance': 'maintenance',
-    'events': 'events',
-    'documents': 'documents',
-    'checklists': 'checklists',
-    'techlog': 'techlog',
-    'organizations': 'organizations',
-    'users': 'users',
-  };
-  return routeMap[entityName] || entityName;
+export function getRouteNameForEntity(entityName: EntityName | string): string {
+  const schema = XUISCHEMA_REGISTRY[entityName as EntityName];
+  if (schema && schema.display.plural) {
+    const pluralLower = schema.display.plural.toLowerCase();
+    // If plural form differs from entityName, use plural as route name
+    // Example: 'logbookentries' -> 'Logbook' -> 'logbook'
+    if (pluralLower !== entityName.toLowerCase()) {
+      return pluralLower;
+    }
+  }
+  // Default: use entityName as route name
+  return entityName;
 }
+
+/**
+ * Get entity name from route name (reverse lookup, derived from XUISCHEMA_REGISTRY and ROLE_CONFIG)
+ * Checks XUISCHEMA_REGISTRY first, then custom pages in ROLE_CONFIG
+ * This replaces the static ROUTE_ENTITY_MAP constant
+ */
+export function getEntityNameForRoute(routeName: string): EntityName | string {
+  // Check XUISCHEMA_REGISTRY - reverse lookup by comparing route names
+  for (const [entityName, schema] of Object.entries(XUISCHEMA_REGISTRY)) {
+    const route = getRouteNameForEntity(entityName);
+    if (route === routeName) {
+      return entityName as EntityName;
+    }
+  }
+  
+  // Check custom pages in ROLE_CONFIG
+  for (const group of ROLE_CONFIG.groups) {
+    for (const role of group.roles) {
+      if (role.navigation) {
+        for (const [entityKey, navConfig] of Object.entries(role.navigation)) {
+          if (
+            navConfig &&
+            typeof navConfig === 'object' &&
+            'customPage' in navConfig &&
+            navConfig.customPage === true &&
+            'route' in navConfig &&
+            typeof navConfig.route === 'string'
+          ) {
+            // Extract route name from full route path (e.g., '/(tabs)/route-planner' -> 'route-planner')
+            const routeFromConfig = navConfig.route.replace('/(tabs)/', '').replace('/', '');
+            if (routeFromConfig === routeName) {
+              return entityKey;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Fallback: assume route name is entity name (for identity mappings)
+  return routeName;
+}
+
+/**
+ * Get the context name for a role
+ * This is the single source of truth for context resolution
+ */
+export function getContextForRole(role: Role): ContextName {
+  return (role.context as ContextName) || role.id as ContextName || 'default';
+}
+
+/**
+ * Generate a page description from a page name
+ * Centralized description formatting
+ */
+function getPageDescription(name: string): string {
+  return `${name} page`;
+}
+
 
 export function generateNavigationForRole(role: Role): GeneratedNavItem[] {
   const navItems: GeneratedNavItem[] = [];
@@ -910,8 +970,8 @@ export function generateNavigationForRole(role: Role): GeneratedNavItem[] {
     return navItems;
   }
 
-  // Get the context to use for this role (defaults to role.id or 'default')
-  const contextName: ContextName = (role.context as ContextName) || role.id as ContextName || 'default';
+  // Get the context to use for this role
+  const contextName: ContextName = getContextForRole(role);
 
   // Iterate through navigation items in the role
   Object.entries(role.navigation).forEach(([entityKey, navConfig]) => {
@@ -921,7 +981,7 @@ export function generateNavigationForRole(role: Role): GeneratedNavItem[] {
       navItems.push({
         id: entityKey,
         name: navConfig.label || entityKey,
-        href: navConfig.route || `/(tabs)/${entityKey}`,
+        href: navConfig.route || buildRoute(entityKey),
         icon: navConfig.icon || 'file',
         label: navConfig.label || entityKey,
         customPage: true,
@@ -942,7 +1002,7 @@ export function generateNavigationForRole(role: Role): GeneratedNavItem[] {
         navItems.push({
           id: entityName,
           name: roleOverride.label || pageConfig.title || schema.display.plural,
-          href: `/(tabs)/${getRouteNameForEntity(entityName)}`,
+          href: buildRoute(getRouteNameForEntity(entityName)),
           icon: roleOverride.icon || schema.display.icon,
           label: roleOverride.label || pageConfig.title || schema.display.plural,
           description: pageConfig.subtitle || schema.display.description,
@@ -981,7 +1041,7 @@ export function getPageInfoForEntity(entityName: EntityName | string, role: Role
   }
 
   // Get the context to use for this role
-  const contextName: ContextName = (role.context as ContextName) || role.id as ContextName || 'default';
+  const contextName: ContextName = getContextForRole(role);
   
   // Get context-specific config
   const contextConfig = schema.contexts[contextName] || schema.contexts.default || {};
@@ -1216,7 +1276,7 @@ export function getPageInfoFromNavConfig(routeId: string): { title: string; icon
     return {
       title: tabBarItem.name,
       icon: tabBarItem.icon,
-      description: `${tabBarItem.name} page`,
+      description: getPageDescription(tabBarItem.name),
     };
   }
 
@@ -1226,7 +1286,7 @@ export function getPageInfoFromNavConfig(routeId: string): { title: string; icon
     return {
       title: profileMenuItem.name,
       icon: profileMenuItem.icon,
-      description: `${profileMenuItem.name} page`,
+      description: getPageDescription(profileMenuItem.name),
     };
   }
 

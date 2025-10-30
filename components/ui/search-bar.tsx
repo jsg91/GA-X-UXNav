@@ -4,6 +4,15 @@ import { Button, Input, XStack, YStack } from 'tamagui';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ANIMATION_DELAYS } from '@/constants/animation-delays';
+import { MODAL_PANEL_DIMENSIONS , ICON_SIZES } from '@/constants/layout';
+import { SEARCH_DROPDOWN_SHADOW } from '@/constants/shadow-styles';
+import { Z_INDEX } from '@/constants/z-index';
+import { OPACITY } from '@/constants/opacity';
+import { TRANSFORM_SCALES } from '@/constants/transform-scales';
+import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { getActiveColor, getActiveFontWeight } from '@/utils/active-state';
+import { useThemeContext } from '@/hooks/use-theme-context';
 
 interface SearchResult {
   id: string;
@@ -78,6 +87,7 @@ const performSearch = (query: string): SearchResult[] => {
 };
 
 export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSelect, width = 280 }: SearchBarProps) {
+  const { resolvedTheme } = useThemeContext();
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -151,7 +161,7 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
         const results = performSearch(query);
         setSearchResults(results);
         setSelectedIndex(-1);
-      }, 300);
+      }, ANIMATION_DELAYS.searchDebounce);
     } else {
       setSearchResults([]);
       setSelectedIndex(-1);
@@ -237,32 +247,32 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
   };
 
   return (
-    <YStack position="relative" ref={containerRef} width={width} zIndex={1000}>
+    <YStack position="relative" ref={containerRef} width={width} zIndex={Z_INDEX.sidebar}>
       <XStack
         alignItems="center"
-        backgroundColor="rgba(0, 0, 0, 0.03)"
-        borderColor={isFocused ? "rgba(0, 122, 255, 0.5)" : "rgba(0, 0, 0, 0.1)"}
+        backgroundColor={INTERACTIVE_COLORS.searchBackground}
+        borderColor={isFocused ? INTERACTIVE_COLORS.searchBorderFocus : INTERACTIVE_COLORS.searchBorder}
         borderRadius="$4"
         borderWidth="$0.5"
         gap="$2"
         height="100%"
         hoverStyle={{
-          backgroundColor: 'rgba(0, 0, 0, 0.06)',
-          borderColor: 'rgba(0, 122, 255, 0.3)',
+          backgroundColor: INTERACTIVE_COLORS.searchBackgroundHover,
+          borderColor: INTERACTIVE_COLORS.searchBorderHover,
         }}
         paddingHorizontal="$2"
         paddingVertical="$1"
         pressStyle={{
-          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: INTERACTIVE_COLORS.searchBackgroundPress,
         }}
       >
-        <IconSymbol style={{ opacity: 0.6 }} name="magnify" color="$color" size={14} />
+        <IconSymbol style={{ opacity: OPACITY.light }} name="magnify" color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} size={ICON_SIZES.small} />
 
         <Input
           ref={inputRef}
           onBlur={() => {
             // Delay blur to allow click on results
-            setTimeout(() => setIsFocused(false), 200);
+            setTimeout(() => setIsFocused(false), ANIMATION_DELAYS.blur);
           }}
           onChangeText={setQuery}
           onFocus={() => setIsFocused(true)}
@@ -274,15 +284,15 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
           autoCorrect={false}
           backgroundColor="transparent"
           borderWidth={0}
-          color="$color"
+          color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
           flex={1}
           fontSize="$4"
           lineHeight="$4"
           minHeight={32}
-          opacity={0.8}
+          opacity={OPACITY.subtle}
           paddingHorizontal={0}
           paddingVertical="$2"
-          placeholderTextColor="$color"
+          placeholderTextColor={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'}
           returnKeyType="search"
         />
 
@@ -291,16 +301,16 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
             onPress={handleClear}
             backgroundColor="transparent"
             hoverStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              transform: 'scale(1.1)',
+              backgroundColor: INTERACTIVE_COLORS.hover,
+              transform: `scale(${TRANSFORM_SCALES.hover})`,
             }}
             padding="$1"
             pressStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.15)',
+              backgroundColor: INTERACTIVE_COLORS.press,
             }}
             size="$1"
           >
-            <IconSymbol style={{ opacity: 0.6 }} name="close" color="$color" size={12} />
+            <IconSymbol style={{ opacity: OPACITY.light }} name="close" color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} size={ICON_SIZES.small} />
           </Button>
         )}
       </XStack>
@@ -309,26 +319,23 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
       {showDropdown && (
         <YStack
           backgroundColor="$background"
-          borderColor="rgba(0, 0, 0, 0.1)"
+          borderColor={INTERACTIVE_COLORS.searchBorder}
           borderRadius="$3"
           borderWidth={1}
           left={0}
           marginTop="$1"
-          maxHeight={320}
+          maxHeight={MODAL_PANEL_DIMENSIONS.maxHeightSearch}
           overflow="hidden"
           position="absolute"
           right={0}
-          shadowColor="$shadowColor"
-          shadowOffset={{ width: 0, height: 2 }}
-          shadowOpacity={0.1}
-          shadowRadius={8}
+          {...SEARCH_DROPDOWN_SHADOW}
           top="100%"
-          zIndex={1001}
+          zIndex={Z_INDEX.searchDropdown}
         >
           {searchResults.length > 0 ? (
             <YStack 
               ref={scrollContainerRef}
-              maxHeight={320} 
+              maxHeight={MODAL_PANEL_DIMENSIONS.maxHeightSearch} 
               overflow="scroll"
               {...(Platform.OS === 'web' && {
                 // @ts-ignore - web-specific attribute
@@ -343,38 +350,38 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
                     key={result.id}
                     onPress={() => handleResultSelect(result)}
                     backgroundColor={isSelected ? 'rgba(0, 122, 255, 0.1)' : 'transparent'}
-                    borderBottomColor="rgba(0, 0, 0, 0.05)"
+                    borderBottomColor={INTERACTIVE_COLORS.groupHeaderBorder}
                     borderBottomWidth={index < searchResults.length - 1 ? 1 : 0}
                     borderRadius={0}
                     hoverStyle={{
-                      backgroundColor: 'rgba(0, 122, 255, 0.08)',
+                      backgroundColor: INTERACTIVE_COLORS.tintHover,
                     }}
                     paddingHorizontal="$3"
                     paddingVertical="$2"
                     pressStyle={{
-                      backgroundColor: 'rgba(0, 122, 255, 0.12)',
+                      backgroundColor: INTERACTIVE_COLORS.tintPress,
                     }}
                   >
                     <XStack alignItems="center" flex={1} gap="$2.5">
                       <IconSymbol
                         style={{ opacity: isSelected ? 1 : 0.6 }}
                         name={result.icon as any}
-                        color={isSelected ? "$tint" : "$color"}
-                        size={18}
+                        color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
+                        size={ICON_SIZES.small}
                       />
                       
                       <YStack flex={1} gap="$0.5" minWidth={0}>
                         <ThemedText
-                          color={isSelected ? "$tint" : "$color"}
+                          color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
                           fontSize="$4"
-                          fontWeight={isSelected ? "$6" : "$4"}
+                          fontWeight={getActiveFontWeight(isSelected) as any}
                         >
                           {result.title}
                         </ThemedText>
                         {result.subtitle && (
                           <ThemedText
-                            style={{ opacity: 0.65 }}
-                            color="$color"
+                            style={{ opacity: resolvedTheme === 'dark' ? 1 : 0.65 }}
+                            color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'}
                             fontSize="$3"
                           >
                             {result.subtitle}
@@ -383,8 +390,8 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
                       </YStack>
                       
                       <ThemedText
-                        style={{ opacity: 0.5 }}
-                        color="$color"
+                        style={{ opacity: resolvedTheme === 'dark' ? 1 : 0.5 }}
+                        color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'}
                         fontSize="$2"
                         fontWeight="$4"
                       >
@@ -397,11 +404,11 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
             </YStack>
           ) : (
             <YStack alignItems="center" justifyContent="center" minHeight={100} padding="$4">
-              <IconSymbol style={{ opacity: 0.3, marginBottom: 8 }} name="magnify" color="$color" size={24} />
-              <ThemedText style={{ opacity: 0.5 }} color="$color" fontSize="$3">
+              <IconSymbol style={{ opacity: OPACITY.veryFaded, marginBottom: 8 }} name="magnify" color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} size={ICON_SIZES.xlarge} />
+              <ThemedText style={{ opacity: resolvedTheme === 'dark' ? 1 : 0.5 }} color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$3">
                 No results found
               </ThemedText>
-              <ThemedText style={{ opacity: 0.4, marginTop: 4 }} color="$color" fontSize="$2">
+              <ThemedText style={{ opacity: resolvedTheme === 'dark' ? 0.8 : 0.4, marginTop: 4 }} color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$2">
                 Try a different search term
               </ThemedText>
             </YStack>

@@ -3,6 +3,10 @@ import { Button } from 'tamagui';
 
 import { Badge } from '@/components/ui/badge';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { TRANSFORM_SCALES } from '@/constants/transform-scales';
+import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { getActiveColor } from '@/utils/active-state';
+import { useThemeContext } from '@/hooks/use-theme-context';
 
 interface NotificationBadgeProps {
   count: number;
@@ -13,24 +17,29 @@ interface NotificationBadgeProps {
 }
 
 export function NotificationBadge({ count, icon, onPress, size = 24, isActive = false }: NotificationBadgeProps) {
+  const { resolvedTheme } = useThemeContext();
+  const iconColor = resolvedTheme === 'dark' 
+    ? (isActive ? '$tint' : '#FFFFFF')
+    : getActiveColor(isActive);
+  
   return (
     <Button
       onPress={onPress}
       backgroundColor="transparent"
       height="100%"
       hoverStyle={{
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
-        transform: 'scale(1.02)',
+        backgroundColor: INTERACTIVE_COLORS.hover,
+        transform: `scale(${TRANSFORM_SCALES.hover})`,
       }}
       padding="$1"
       position="relative"
       pressStyle={{
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-        transform: 'scale(0.98)',
+        backgroundColor: INTERACTIVE_COLORS.press,
+        transform: `scale(${TRANSFORM_SCALES.press})`,
       }}
       size="$2"
     >
-      <IconSymbol name={icon} color={isActive ? "$tint" : "$color"} size={size} />
+      <IconSymbol name={icon} color={iconColor} size={size} />
       <Badge count={count} />
     </Button>
   );

@@ -1,0 +1,14 @@
+app/(tabs)/about.tsx(21,13): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(52,49): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(59,49): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(66,48): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(73,39): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(80,41): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(87,38): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(94,48): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+app/(tabs)/about.tsx(101,42): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.
+components/parallax-scroll-view.tsx(50,7): error TS2322: Type '{ backgroundColor: string | Variable<string>; flex: number; }' is not assignable to type 'StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>'.
+  Types of property 'backgroundColor' are incompatible.
+    Type 'string | Variable<string>' is not assignable to type 'ColorValue | SharedValueDisableContravariance<string> | SharedValueDisableContravariance<OpaqueColorValue> | { ...; } | undefined'.
+      Type 'Variable<string>' is not assignable to type 'ColorValue | SharedValueDisableContravariance<string> | SharedValueDisableContravariance<OpaqueColorValue> | { ...; } | undefined'.
+components/ui/collapsible.tsx(23,11): error TS2322: Type 'Variable<string>' is not assignable to type 'string | OpaqueColorValue | undefined'.

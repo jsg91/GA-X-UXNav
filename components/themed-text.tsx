@@ -2,6 +2,8 @@ import { Text  } from 'tamagui';
 import type {TextProps} from 'tamagui';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { getTextColorKey } from '@/utils/theme-colors';
+import { getTextTypeStyles } from '@/utils/themed-text-styles';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -17,23 +19,12 @@ export function ThemedText({
   level = 'primary',
   ...rest
 }: ThemedTextProps) {
-  // Determine color key based on level
-  const colorKey = level === 'secondary' ? 'textSecondary' :
-                   level === 'tertiary' ? 'textTertiary' : 'text';
-
+  // Determine color key based on level using shared utility
+  const colorKey = getTextColorKey(level);
   const color = useThemeColor({ light: lightColor, dark: darkColor }, colorKey as any);
 
-  const fontSize = type === 'title' ? '$10' :
-                   type === 'subtitle' ? '$8' :
-                   type === 'default' ? '$6' : '$6';
-
-  const fontWeight = type === 'title' ? '$7' :
-                     type === 'defaultSemiBold' ? '$4' :
-                     type === 'subtitle' ? '$5' : '$2';
-
-  const lineHeight = type === 'title' ? '$10' :
-                     type === 'subtitle' ? '$8' :
-                     type === 'default' ? '$6' : '$6';
+  // Get style properties for the text type
+  const { fontSize, fontWeight, lineHeight } = getTextTypeStyles(type);
 
   return (
     <Text

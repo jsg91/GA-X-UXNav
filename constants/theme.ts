@@ -6,8 +6,18 @@
 import { createAnimations } from '@tamagui/animations-react-native';
 import { createFont, createTamagui, createTokens } from 'tamagui';
 
+import { COLOR_VALUES } from './color-values';
+import { DARK_FALLBACKS, DARK_SHADOW_VARIANTS, LIGHT_FALLBACKS } from './theme-fallbacks';
+
+// Re-export for backward compatibility
+export { COLOR_VALUES } from './color-values';
+
 const tintColorLight = '#007AFF'; // iOS blue
-const tintColorDark = '#0A84FF';  // iOS blue dark variant
+// Note: Dark theme uses white (#FFFFFF) as tint, defined directly in tokens
+
+// Font weight constants for reuse
+const FONT_WEIGHTS = [300, 400, 500, 600, 700, 800, 900] as const;
+const ARIAL_FACE = { normal: 'Arial' } as const;
 
 // Create Arial font for all text
 const arialFont = createFont({
@@ -67,83 +77,46 @@ const arialFont = createFont({
     12: 0,
     true: 0,
   },
-  face: {
-    300: { normal: 'Arial' },
-    400: { normal: 'Arial' },
-    500: { normal: 'Arial' },
-    600: { normal: 'Arial' },
-    700: { normal: 'Arial' },
-    800: { normal: 'Arial' },
-    900: { normal: 'Arial' },
-  },
+  // Generate font faces programmatically (Fix #5)
+  face: Object.fromEntries(FONT_WEIGHTS.map(w => [w, ARIAL_FACE])) as Record<number, { normal: string }>,
 });
+
+// Shared spacing scale (Fix #3: Consolidate space/size tokens)
+const spacingScale = {
+  0: 0,
+  1: 4,
+  2: 8,
+  3: 12,
+  4: 16,
+  5: 20,
+  6: 24,
+  7: 28,
+  8: 32,
+  9: 36,
+  10: 40,
+  11: 44,
+  12: 48,
+  true: 16, // default padding
+} as const;
 
 export const tokens = createTokens({
   color: {
-    // Light theme colors
-    light_text: '#000000',
-    light_background: '#FFFFFF',
+    // Fix #7: Use COLOR_VALUES constants - single source of truth
+    ...COLOR_VALUES,
+    // Tint colors (derived, not in COLOR_VALUES since they use variables)
     light_tint: tintColorLight,
-    light_icon: '#333333',
-    light_tabIconDefault: '#666666',
     light_tabIconSelected: tintColorLight,
-    light_border: 'rgba(0, 0, 0, 0.1)',
-    light_shadow: 'rgba(0, 0, 0, 0.1)',
-    light_outlineColor: 'rgba(0, 123, 255, 0.5)',
-    // Dark theme colors - improved palette
-    dark_text: '#F8F9FA', // Off-white for primary text
-    dark_text_secondary: '#E9ECEF', // Lighter gray for secondary text
-    dark_text_tertiary: '#ADB5BD', // Medium gray for tertiary text
-    dark_background: '#0F1419', // Dark blue-gray background (instead of pure black)
-    dark_background_secondary: '#1A1F23', // Slightly lighter for cards/containers
-    dark_background_hover: '#1F2529', // For hover states
-    dark_tint: tintColorDark,
-    dark_icon: '#E9ECEF', // Lighter icons for better visibility
-    dark_tabIconDefault: '#ADB5BD', // Medium gray for unselected tabs
-    dark_tabIconSelected: tintColorDark,
-    dark_border: 'rgba(255, 255, 255, 0.08)', // Subtle borders
-    dark_border_hover: 'rgba(255, 255, 255, 0.12)', // Slightly more visible on hover
-    dark_shadow: 'rgba(0, 0, 0, 0.4)', // Stronger shadows for depth
-    dark_outlineColor: 'rgba(0, 123, 255, 0.7)',
+    dark_tint: '#FFFFFF',
     // Add missing tokens that themes reference
     tint: tintColorLight,
-    color: '#000000',
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    shadowColor: 'rgba(0, 0, 0, 0.1)',
-    outlineColor: 'rgba(0, 123, 255, 0.5)',
+    color: COLOR_VALUES.light_text,
+    borderColor: COLOR_VALUES.light_border,
+    shadowColor: COLOR_VALUES.light_shadow,
+    outlineColor: COLOR_VALUES.light_outlineColor,
   },
-  space: {
-    0: 0,
-    1: 4,
-    2: 8,
-    3: 12,
-    4: 16,
-    5: 20,
-    6: 24,
-    7: 28,
-    8: 32,
-    9: 36,
-    10: 40,
-    11: 44,
-    12: 48,
-    true: 16, // default padding
-  },
-  size: {
-    0: 0,
-    1: 4,
-    2: 8,
-    3: 12,
-    4: 16,
-    5: 20,
-    6: 24,
-    7: 28,
-    8: 32,
-    9: 36,
-    10: 40,
-    11: 44,
-    12: 48,
-    true: 16,
-  },
+  // Fix #3: Use shared spacing scale for both space and size
+  space: spacingScale,
+  size: spacingScale,
   radius: {
     0: 0,
     1: 2,
@@ -168,73 +141,104 @@ export const tokens = createTokens({
   },
 });
 
+/**
+ * Create a theme object from tokens with optional overrides
+ * This DRY approach ensures themes are generated consistently from tokens
+ */
+function createThemeFromTokens(
+  mode: 'light' | 'dark',
+  tokensObj: typeof tokens,
+  overrides?: Partial<Record<string, string>>
+) {
+  const prefix = mode === 'light' ? 'light_' : 'dark_';
+  const tint = mode === 'light' ? tokensObj.color.tint : tokensObj.color.dark_tint;
 
-// Create themes
-export const lightTheme = {
-  background: tokens.color.light_background,
-  backgroundHover: '#f5f5f5',
-  backgroundPress: '#e5e5e5',
-  backgroundFocus: '#f0f0f0',
-  color: tokens.color.light_text,
-  colorHover: tokens.color.tint,
-  colorPress: tokens.color.tint,
-  colorFocus: tokens.color.tint,
-  borderColor: tokens.color.light_border,
-  borderColorHover: tokens.color.light_border,
-  borderColorPress: tokens.color.tint,
-  borderColorFocus: tokens.color.tint,
-  shadowColor: tokens.color.light_shadow,
-  shadowColorHover: tokens.color.light_shadow,
-  shadowColorPress: tokens.color.light_shadow,
-  shadowColorFocus: tokens.color.light_shadow,
-  outlineColor: tokens.color.light_outlineColor,
-  outlineColorHover: tokens.color.light_outlineColor,
-  outlineColorPress: tokens.color.tint,
-  outlineColorFocus: tokens.color.tint,
-};
+  // Helper to safely get token value with fallback
+  const getToken = (key: string, fallback: string): string => {
+    const tokenKey = `${prefix}${key}` as keyof typeof tokensObj.color;
+    const value = tokensObj.color[tokenKey];
+    return (typeof value === 'string' ? value : fallback);
+  };
 
-export const darkTheme = {
-  background: tokens.color.dark_background,
-  backgroundHover: tokens.color.dark_background_hover,
-  backgroundPress: '#252B30', // Even lighter press state
-  backgroundFocus: '#1F2529', // Consistent with hover
-  backgroundSecondary: tokens.color.dark_background_secondary,
-  backgroundSecondaryHover: '#20252A',
-  backgroundSecondaryPress: '#272C31',
-  backgroundSecondaryFocus: '#22272C',
-  color: tokens.color.dark_text,
-  colorSecondary: tokens.color.dark_text_secondary,
-  colorTertiary: tokens.color.dark_text_tertiary,
-  colorHover: tokens.color.dark_text_secondary,
-  colorPress: tokens.color.tint,
-  colorFocus: tokens.color.dark_text_secondary,
-  borderColor: tokens.color.dark_border,
-  borderColorHover: tokens.color.dark_border_hover,
-  borderColorPress: tokens.color.tint,
-  borderColorFocus: tokens.color.dark_border_hover,
-  shadowColor: tokens.color.dark_shadow,
-  shadowColorHover: 'rgba(0, 0, 0, 0.5)',
-  shadowColorPress: 'rgba(0, 0, 0, 0.6)',
-  shadowColorFocus: 'rgba(0, 0, 0, 0.5)',
-  outlineColor: tokens.color.dark_outlineColor,
-  outlineColorHover: tokens.color.dark_outlineColor,
-  outlineColorPress: tokens.color.tint,
-  outlineColorFocus: tokens.color.dark_outlineColor,
-};
+  const fallbacks = mode === 'light' ? LIGHT_FALLBACKS : DARK_FALLBACKS;
+
+  const baseTheme = {
+    background: getToken('background', fallbacks.background),
+    backgroundHover: getToken('background_hover', fallbacks.background_hover),
+    backgroundPress: getToken('background_press', fallbacks.background_press),
+    backgroundFocus: getToken('background_focus', fallbacks.background_focus),
+    color: getToken('text', fallbacks.text),
+    colorHover: tint,
+    colorPress: tint,
+    colorFocus: tint,
+    borderColor: getToken('border', fallbacks.border),
+    borderColorHover: getToken('border_hover', fallbacks.border_hover),
+    borderColorPress: tint,
+    borderColorFocus: tint,
+    shadowColor: getToken('shadow', fallbacks.shadow),
+    shadowColorHover: getToken('shadow', mode === 'light' ? fallbacks.shadow : DARK_SHADOW_VARIANTS.hover),
+    shadowColorPress: getToken('shadow', mode === 'light' ? fallbacks.shadow : DARK_SHADOW_VARIANTS.press),
+    shadowColorFocus: getToken('shadow', mode === 'light' ? fallbacks.shadow : DARK_SHADOW_VARIANTS.focus),
+    outlineColor: getToken('outlineColor', fallbacks.outlineColor),
+    outlineColorHover: getToken('outlineColor', fallbacks.outlineColor),
+    outlineColorPress: tint,
+    outlineColorFocus: tint,
+  };
+
+  // Apply mode-specific properties
+  if (mode === 'dark') {
+    return {
+      ...baseTheme,
+      backgroundSecondary: tokensObj.color.dark_background_secondary,
+      // Fix #7: Use tokens instead of hardcoded values
+      backgroundSecondaryHover: tokensObj.color.dark_background_secondary_hover || '#2A2A2A',
+      backgroundSecondaryPress: tokensObj.color.dark_background_secondary_press || '#3A3A3A',
+      backgroundSecondaryFocus: tokensObj.color.dark_background_secondary_focus || '#2A2A2A',
+      colorSecondary: tokensObj.color.dark_text_secondary,
+      colorTertiary: tokensObj.color.dark_text_tertiary,
+      borderColorHover: tokensObj.color.dark_border_hover,
+      borderColorPress: tokensObj.color.dark_border_hover,
+      borderColorFocus: tokensObj.color.dark_border_hover,
+      outlineColorPress: tokensObj.color.dark_text_secondary,
+      ...overrides,
+    };
+  }
+
+  // Light theme with secondary background
+  return {
+    ...baseTheme,
+    backgroundSecondary: tokensObj.color.light_background_secondary || '#F5F5F5',
+    ...overrides,
+  };
+}
+
+// Create themes using the helper function
+export const lightTheme = createThemeFromTokens('light', tokens);
+export const darkTheme = createThemeFromTokens('dark', tokens);
 
 // Create animations using react-native-reanimated
+// Shared spring configuration for animations with same values
+const sharedSpringConfig = {
+  damping: 20,
+  mass: 1.2,
+  stiffness: 250,
+};
+
+// Fix #4: Remove duplicate animation config (slow and lazy were identical)
+const slowAnimationConfig = {
+  type: 'spring' as const,
+  damping: 20,
+  stiffness: 60,
+};
+
 const animations = createAnimations({
   quick: {
     type: 'spring',
-    damping: 20,
-    mass: 1.2,
-    stiffness: 250,
+    ...sharedSpringConfig,
   },
   fast: {
     type: 'spring',
-    damping: 20,
-    mass: 1.2,
-    stiffness: 250,
+    ...sharedSpringConfig,
   },
   medium: {
     type: 'spring',
@@ -242,16 +246,8 @@ const animations = createAnimations({
     mass: 0.9,
     stiffness: 100,
   },
-  slow: {
-    type: 'spring',
-    damping: 20,
-    stiffness: 60,
-  },
-  lazy: {
-    type: 'spring',
-    damping: 20,
-    stiffness: 60,
-  },
+  slow: slowAnimationConfig,
+  // Remove lazy as it was identical to slow - use 'slow' instead
 });
 
 // Create Tamagui config
@@ -332,35 +328,42 @@ declare module 'tamagui' {
 export type AppConfig = typeof tamaguiConfig;
 export type Tokens = typeof tokens;
 
-// Export for backward compatibility - return plain strings
+// Fix #1: Derive Colors export from tokens instead of duplicating values
+// Helper to safely get token value with fallback
+const getTokenColor = (key: keyof typeof tokens.color, fallback: string): string => {
+  const value = tokens.color[key];
+  return typeof value === 'string' ? value : fallback;
+};
+
+// Export for backward compatibility - derive from tokens instead of duplicating
 export const Colors = {
   light: {
-    text: '#000000',
-    textSecondary: '#000000',
-    textTertiary: '#000000',
-    background: '#FFFFFF',
-    backgroundSecondary: '#FFFFFF',
-    backgroundHover: '#FFFFFF',
-    tint: tintColorLight,
-    icon: '#333333',
-    tabIconDefault: '#666666',
-    tabIconSelected: tintColorLight,
-    border: 'rgba(0, 0, 0, 0.1)',
-    shadow: 'rgba(0, 0, 0, 0.1)',
+    text: getTokenColor('light_text', '#000000'),
+    textSecondary: getTokenColor('light_text', '#000000'), // No separate token, use same as text
+    textTertiary: getTokenColor('light_text', '#000000'), // No separate token, use same as text
+    background: getTokenColor('light_background', '#FFFFFF'),
+    backgroundSecondary: getTokenColor('light_background_secondary', '#F5F5F5'),
+    backgroundHover: getTokenColor('light_background_hover', '#f5f5f5'),
+    tint: getTokenColor('light_tint', tintColorLight),
+    icon: getTokenColor('light_icon', '#333333'),
+    tabIconDefault: getTokenColor('light_tabIconDefault', '#666666'),
+    tabIconSelected: getTokenColor('light_tabIconSelected', tintColorLight),
+    border: getTokenColor('light_border', 'rgba(0, 0, 0, 0.1)'),
+    shadow: getTokenColor('light_shadow', 'rgba(0, 0, 0, 0.1)'),
   },
   dark: {
-    text: '#F8F9FA',
-    textSecondary: '#E9ECEF',
-    textTertiary: '#ADB5BD',
-    background: '#0F1419',
-    backgroundSecondary: '#1A1F23',
-    backgroundHover: '#1F2529',
-    tint: tintColorDark,
-    icon: '#E9ECEF',
-    tabIconDefault: '#ADB5BD',
-    tabIconSelected: tintColorDark,
-    border: 'rgba(255, 255, 255, 0.08)',
-    shadow: 'rgba(0, 0, 0, 0.4)',
+    text: getTokenColor('dark_text', '#FFFFFF'),
+    textSecondary: getTokenColor('dark_text_secondary', '#CCCCCC'),
+    textTertiary: getTokenColor('dark_text_tertiary', '#808080'),
+    background: getTokenColor('dark_background', '#000000'),
+    backgroundSecondary: getTokenColor('dark_background_secondary', '#1A1A1A'),
+    backgroundHover: getTokenColor('dark_background_hover', '#333333'),
+    tint: getTokenColor('dark_tint', '#FFFFFF'),
+    icon: getTokenColor('dark_icon', '#CCCCCC'),
+    tabIconDefault: getTokenColor('dark_tabIconDefault', '#808080'),
+    tabIconSelected: getTokenColor('dark_tabIconSelected', '#FFFFFF'),
+    border: getTokenColor('dark_border', '#333333'),
+    shadow: getTokenColor('dark_shadow', 'rgba(0, 0, 0, 0.5)'),
   },
 };
 

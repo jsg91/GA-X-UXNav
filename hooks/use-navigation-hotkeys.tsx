@@ -1,8 +1,9 @@
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { Platform } from 'react-native';
 
 import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
+import { isWeb } from '@/utils/platform';
+import { navigateTo } from '@/utils/router';
 
 interface NavigationHotkeysProps {
   onToggleAI?: () => void;
@@ -15,11 +16,11 @@ export function useNavigationHotkeys({
   onFocusSearch,
   onCloseModals
 }: NavigationHotkeysProps = {}) {
-  const router = useRouter();
   const pathname = usePathname();
-  const isWeb = Platform.OS === 'web';
 
-  console.log(`Initializing navigation hotkeys for platform: ${Platform.OS}`);
+  if (__DEV__) {
+    console.log(`Initializing navigation hotkeys for platform: ${isWeb ? 'web' : 'mobile'}`);
+  }
 
   // Navigation shortcuts (GitHub-style sequences)
   // Must register each hotkey individually (can't call hooks in loops)
@@ -27,59 +28,59 @@ export function useNavigationHotkeys({
   
   useHotkeys(navHotkeys.dashboard?.keys || '', () => {
     console.log(`Navigation hotkey triggered: ${navHotkeys.dashboard.keys} -> ${navHotkeys.dashboard.route}`);
-    router.push(navHotkeys.dashboard.route as any);
+    navigateTo(navHotkeys.dashboard.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.dashboard,
+    enabled: isWeb && !!navHotkeys.dashboard,
   });
 
   useHotkeys(navHotkeys.reservations?.keys || '', () => {
-    router.push(navHotkeys.reservations.route as any);
+    navigateTo(navHotkeys.reservations.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.reservations,
+    enabled: isWeb && !!navHotkeys.reservations,
   });
 
   useHotkeys(navHotkeys.logbook?.keys || '', () => {
-    router.push(navHotkeys.logbook.route as any);
+    navigateTo(navHotkeys.logbook.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.logbook,
+    enabled: isWeb && !!navHotkeys.logbook,
   });
 
   useHotkeys(navHotkeys.aircrafts?.keys || '', () => {
-    router.push(navHotkeys.aircrafts.route as any);
+    navigateTo(navHotkeys.aircrafts.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.aircrafts,
+    enabled: isWeb && !!navHotkeys.aircrafts,
   });
 
   useHotkeys(navHotkeys.aerodromes?.keys || '', () => {
-    router.push(navHotkeys.aerodromes.route as any);
+    navigateTo(navHotkeys.aerodromes.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.aerodromes,
+    enabled: isWeb && !!navHotkeys.aerodromes,
   });
 
   useHotkeys(navHotkeys.maintenance?.keys || '', () => {
-    router.push(navHotkeys.maintenance.route as any);
+    navigateTo(navHotkeys.maintenance.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.maintenance,
+    enabled: isWeb && !!navHotkeys.maintenance,
   });
 
   useHotkeys(navHotkeys.routePlanner?.keys || '', () => {
-    router.push(navHotkeys.routePlanner.route as any);
+    navigateTo(navHotkeys.routePlanner.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,
-    enabled: Platform.OS === 'web' && !!navHotkeys.routePlanner,
+    enabled: isWeb && !!navHotkeys.routePlanner,
   });
 
   // Global actions
@@ -120,7 +121,7 @@ export function useNavigationHotkeys({
   // Help shortcut
   useHotkeys(hotkeysConfig.actions.help?.keys || '', () => {
     console.log(`Help hotkey triggered: ${hotkeysConfig.actions.help.keys}`);
-    router.push(hotkeysConfig.actions.help.route as any);
+    navigateTo(hotkeysConfig.actions.help.route);
   }, {
     preventDefault: true,
     enableOnFormTags: false,

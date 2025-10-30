@@ -1,6 +1,6 @@
 import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, StatusBar, useWindowDimensions } from 'react-native';
+import { Modal, StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, ScrollView, View, XStack, YStack } from 'tamagui';
 
@@ -11,21 +11,29 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { SearchBar } from '@/components/ui/search-bar';
-import { EntityName, generateNavigationForRole, getPageInfoForEntity, getPageInfoFromNavConfig, NAVIGATION_CONFIG, Role } from '@/constants/NAVIGATION';
+import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, NAVIGATION_CONFIG, Role } from '@/constants/NAVIGATION';
 import { useNavigationHotkeys } from '@/hooks/use-navigation-hotkeys';
+import { useNavigationItems } from '@/hooks/use-navigation-items';
 import { useRoleContext } from '@/hooks/use-role-context';
 import { useThemeContext } from '@/hooks/use-theme-context';
+import { HEADER_HEIGHT, SIDEBAR_BREAKPOINT, AI_MODAL_DIMENSIONS, ICON_SIZES } from '@/constants/layout';
+import { AI_MODAL_SHADOW, BOTTOM_NAV_SHADOW } from '@/constants/shadow-styles';
+import { ANIMATION_DELAYS } from '@/constants/animation-delays';
+import { REFOCUS_DELAYS } from '@/constants/refocus-delays';
+import { Z_INDEX } from '@/constants/z-index';
+import { OPACITY } from '@/constants/opacity';
+import { refocusInput as refocusInputUtil, useAutoFocus } from '@/hooks/use-auto-focus';
+import { getIconColor } from '@/utils/icons';
+import { isBrowserEnvironment, isWeb } from '@/utils/platform';
+import { getItemHref, isTabActive } from '@/utils/navigation';
+import { stopPropagation } from '@/utils/event-handlers';
+import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
+import { navigateTo } from '@/utils/router';
+import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
 
 interface ResponsiveNavigationProps {
   children: React.ReactNode;
 }
-
-// Breakpoint for showing sidebar vs bottom nav
-const SIDEBAR_BREAKPOINT = 768;
-// Header height - matches the header minHeight
-const HEADER_HEIGHT = 56;
-// Header padding ($3) - matches paddingHorizontal in responsive-navigation header
-const HEADER_PADDING = 12; // $3 = 12px
 
 export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const { resolvedTheme } = useThemeContext();
@@ -37,12 +45,12 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   const [messageCount] = useState(2); // Mock message count
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   // Initialize dimensionsReady as true for mobile platforms to ensure bottom nav shows immediately
-  const [dimensionsReady, setDimensionsReady] = useState(Platform.OS !== 'web');
+  const [dimensionsReady, setDimensionsReady] = useState(!isWeb);
   const [hasMeasuredDimensions, setHasMeasuredDimensions] = useState(false);
   const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiMessageInput, setAIMessageInput] = useState('');
-  const [aiMessages, setAIMessages] = useState<Array<{ id: string; text: string; sender: 'user' | 'ai'; timestamp: Date }>>([
+  const [aiMessages, setAIMessages] = useState<{ id: string; text: string; sender: 'user' | 'ai'; timestamp: Date }[]>([
     {
       id: 'welcome',
       text: "Hello! I'm the GA-X AI Assistant. I can help you with:",
@@ -60,44 +68,19 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
     if (scrollViewRef.current && aiMessages.length > 0) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, ANIMATION_DELAYS.standard);
     }
   }, [aiMessages]);
 
-  // Auto-focus input when AI modal opens
-  useEffect(() => {
-    if (isAIModalOpen) {
-      // Delay to ensure modal is fully rendered, longer delay for iOS Safari
-      setTimeout(() => {
-        if (aiInputRef.current) {
-          // Try multiple methods to focus on mobile web
-          try {
-            // For Tamagui Input, try accessing the underlying input element
-            const inputElement = aiInputRef.current;
-            if (inputElement && typeof inputElement.focus === 'function') {
-              inputElement.focus();
-            }
-            // Also try accessing the native element for web
-            if (Platform.OS === 'web' && typeof document !== 'undefined') {
-              const nativeInput = document.querySelector('input[placeholder*="Type your message"]') as HTMLInputElement;
-              if (nativeInput) {
-                nativeInput.focus();
-                nativeInput.click(); // iOS Safari sometimes needs click to trigger keyboard
-              }
-            }
-          } catch (error) {
-            if (__DEV__) {
-              console.warn('Failed to focus AI input:', error);
-            }
-          }
-        }
-      }, Platform.OS === 'web' ? 500 : 300);
-    }
-  }, [isAIModalOpen]);
+  // Auto-focus input when AI modal opens using shared hook
+  useAutoFocus(aiInputRef, isAIModalOpen, {
+    selector: 'input[placeholder*="Type your message"]',
+    clickOnFocus: true,
+  });
 
   // Set viewport meta tag for mobile web
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    if (isBrowserEnvironment()) {
       // Set viewport meta tag
       let viewportMeta = document.querySelector('meta[name="viewport"]');
       if (!viewportMeta) {
@@ -113,7 +96,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
   // Update document title based on current page
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    if (isBrowserEnvironment()) {
       let pageTitle = 'GA-X';
       
       if (pathname === '/') {
@@ -127,22 +110,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         if (navConfigInfo) {
           pageTitle = `${navConfigInfo.title} | GA-X`;
         } else {
-          // Try to get from entity routes
-          const entityNameMap: Record<string, EntityName> = {
-            'logbook': 'logbookentries',
-            'aircrafts': 'aircrafts',
-            'reservations': 'reservations',
-            'aerodromes': 'aerodromes',
-            'maintenance': 'maintenance',
-            'events': 'events',
-            'documents': 'documents',
-            'checklists': 'checklists',
-            'techlog': 'techlog',
-            'organizations': 'organizations',
-            'users': 'users',
-          };
-          
-          const entityName = entityNameMap[routeName] || routeName;
+          // Try to get from entity routes using derived mapping
+          const entityName = getEntityNameForRoute(routeName);
           const pageInfo = getPageInfoForEntity(entityName as EntityName, currentRole);
           pageTitle = `${pageInfo.title} | GA-X`;
         }
@@ -154,7 +123,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
   // Handle initial responsive detection - assume large screen on web initially to prevent bottom nav flash
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (isWeb) {
       // On web, assume large screen initially to prevent bottom nav flash
       setDimensionsReady(true);
 
@@ -208,19 +177,19 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
   // Determine if we should show sidebar (large screens) or bottom nav (small screens)
   // On web, default to showing sidebar to prevent bottom nav flash, but still respect actual screen size
-  const showSidebar = Platform.OS === 'web'
+  const showSidebar = isWeb
     ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Assume sidebar on web initially until dimensions are measured
     : (dimensionsReady && width >= SIDEBAR_BREAKPOINT);  // Only show sidebar on mobile if dimensions confirm large screen
 
   // For web, reserve sidebar space immediately to prevent layout shift
-  const shouldReserveSidebarSpace = Platform.OS === 'web'
+  const shouldReserveSidebarSpace = isWeb
     ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Reserve space immediately on web
     : (dimensionsReady && showSidebar);  // Only reserve on mobile when confirmed
 
   // Debug logging for development
   if (__DEV__) {
     console.log('ResponsiveNavigation Debug:', {
-      platform: Platform.OS,
+      platform: isWeb ? 'web' : 'mobile',
       width,
       dimensionsReady,
       showSidebar,
@@ -229,15 +198,15 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   }
 
   const handleNotificationPress = () => {
-    router.push('/(tabs)/notifications' as any);
+    navigateTo('/(tabs)/notifications');
   };
 
   const handleMessagePress = () => {
-    router.push('/(tabs)/messages' as any);
+    navigateTo('/(tabs)/messages');
   };
 
   const handleTabPress = (href: string) => {
-    router.push(href as any);
+    navigateTo(href);
   };
 
   const handleRoleChange = (role: Role) => {
@@ -246,15 +215,13 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   };
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
     // TODO: Implement global search functionality
     // Could search across aircraft, aerodromes, documents, etc.
   };
 
   const handleSearchResultSelect = (result: any) => {
-    console.log('Search result selected:', result);
     if (result.href) {
-      router.push(result.href as any);
+      navigateTo(result.href);
     }
   };
 
@@ -275,41 +242,13 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
     setAIMessageInput('');
 
     // Keep keyboard open by aggressively refocusing input after sending
-    // Use multiple strategies to ensure it works on all platforms
-    const refocusInput = () => {
-      if (Platform.OS === 'web' && typeof document !== 'undefined') {
-        // For web, find and focus the native input element
-        const nativeInput = document.querySelector('input[placeholder*="Type your message"]') as HTMLInputElement;
-        if (nativeInput) {
-          nativeInput.focus();
-          // Also try click to ensure focus on iOS Safari
-          nativeInput.click();
-        }
-      }
-      // Also try the ref directly
-      if (aiInputRef.current) {
-        try {
-          if (typeof aiInputRef.current.focus === 'function') {
-            aiInputRef.current.focus();
-          }
-        } catch (error) {
-          if (__DEV__) {
-            console.warn('Failed to refocus AI input via ref:', error);
-          }
-        }
-      }
-    };
-
-    // Refocus immediately and after multiple small delays to catch all scenarios
-    requestAnimationFrame(() => {
-      refocusInput();
-      setTimeout(refocusInput, 10);
-      setTimeout(refocusInput, 50);
-      setTimeout(() => {
-        refocusInput();
-        setIsSendingMessage(false);
-      }, 150);
-    });
+    // Use shared utility function for consistent refocus behavior
+    refocusInputUtil(aiInputRef, 'input[placeholder*="Type your message"]', [...REFOCUS_DELAYS]);
+    
+    // Set sending state to false after delay
+    setTimeout(() => {
+      setIsSendingMessage(false);
+    }, ANIMATION_DELAYS.medium);
 
     // Simulate AI response (you can replace this with actual API call)
     setTimeout(() => {
@@ -321,39 +260,27 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       };
       setAIMessages((prev) => [...prev, aiResponse]);
       // Refocus again after AI response
-      refocusInput();
-    }, 500);
+      refocusInputUtil(aiInputRef, 'input[placeholder*="Type your message"]');
+    }, ANIMATION_DELAYS.async);
   };
 
   // Hotkey handlers
   const handleFocusSearch = () => {
-    console.log('ResponsiveNavigation: handleFocusSearch called');
     // Focus the search bar in header if available
-    if (Platform.OS === 'web' && dimensionsReady && showSidebar) {
+    if (isWeb && dimensionsReady && showSidebar) {
       if (typeof document !== 'undefined' && typeof document.querySelector === 'function') {
         const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
         if (searchInput) {
-          console.log('ResponsiveNavigation: Found search input, focusing');
           searchInput.focus();
           searchInput.select(); // Select all text for easy replacement
-        } else {
-          console.log('ResponsiveNavigation: Search input not found');
         }
       }
-    } else {
-      console.log('ResponsiveNavigation: Search focus conditions not met', { dimensionsReady, showSidebar });
     }
   };
 
-  const handleToggleAI = () => {
-    console.log('ResponsiveNavigation: handleToggleAI called');
-    setIsAIModalOpen((prev: boolean) => !prev);
-    console.log('AI Assistant toggled via hotkey');
-    // TODO: Implement actual AI modal/panel opening
-  };
+  const handleToggleAI = createToggleHandler(setIsAIModalOpen);
 
   const handleCloseModals = () => {
-    console.log('ResponsiveNavigation: handleCloseModals called');
     setShowHelpOverlay(false);
     setIsAIModalOpen(false);
     setSidebarExpanded(false);
@@ -369,32 +296,20 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   });
   console.log('ResponsiveNavigation: Hotkeys initialized');
 
-  // Generate navigation items for bottom nav based on current role (same as sidebar)
-  const bottomNavItems = useMemo(() => {
-    if (currentRole) {
-      return generateNavigationForRole(currentRole);
-    }
-    // Fallback to old navigation config if no role
-    return NAVIGATION_CONFIG.tabBar.items.filter(item => item.visible);
-  }, [currentRole]);
+  // Generate navigation items for bottom nav based on current role
+  const bottomNavItems = useNavigationItems(currentRole, { forLargeScreen: false });
 
   // Get current tab index based on pathname and screen size
   const getCurrentTabIndex = () => {
     const currentIndex = bottomNavItems.findIndex(item => {
-      const href = 'href' in item ? item.href : (item as any).href;
-      if (!href) return false;
-      // Handle root path
-      if (href === '/(tabs)/' && pathname === '/') return true;
-      // Handle other tab paths
-      if (href && pathname.includes(href.replace('/(tabs)/', ''))) return true;
-      return href === pathname;
+      return isTabActive(getItemHref(item), pathname);
     });
     return currentIndex >= 0 ? currentIndex : 0;
   };
 
   // Track keyboard height for mobile web (iOS Safari)
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && !showSidebar && isAIModalOpen) {
+    if (isWeb && typeof window !== 'undefined' && !showSidebar && isAIModalOpen) {
       let initialViewportHeight = window.visualViewport?.height || window.innerHeight;
       
       const updateKeyboardHeight = () => {
@@ -472,7 +387,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
     if (showSidebar) return 100;
     if (keyboardHeight > 0) return keyboardHeight + 10;
     // Account for bottom nav bar on mobile (keep consistent position when keyboard closed)
-    return !showSidebar && Platform.OS === 'web' ? 80 : 140;
+    return !showSidebar && isWeb ? 80 : 140;
   }, [showSidebar, keyboardHeight]);
 
   const aiModalTop = useMemo(() => {
@@ -483,24 +398,24 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
   const aiModalMaxHeight = useMemo(() => {
     if (showSidebar) return "80vh";
-    if (keyboardHeight > 0 && Platform.OS === 'web' && typeof window !== 'undefined') {
+    if (keyboardHeight > 0 && isBrowserEnvironment()) {
       // Use visual viewport height when keyboard is open
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
       // Calculate max height: viewport height minus header minus bottom position
       // bottom position is keyboardHeight + 10, so we need to account for that
       const availableHeight = viewportHeight - HEADER_HEIGHT - (keyboardHeight + 10) - 10;
-      return `${Math.max(200, availableHeight)}px`;
+      return `${Math.max(AI_MODAL_DIMENSIONS.minAvailableHeight, availableHeight)}px`;
     }
     // Without keyboard, use window height minus header and bottom nav
     const bottomNavHeight = !showSidebar ? 68 : 0;
-    return `${Math.max(200, height - HEADER_HEIGHT - bottomNavHeight - 20)}px`;
+    return `${Math.max(AI_MODAL_DIMENSIONS.minAvailableHeight, height - HEADER_HEIGHT - bottomNavHeight - 20)}px`;
   }, [showSidebar, keyboardHeight, height]);
 
   const aiModalMinHeight = useMemo(() => {
-    if (showSidebar) return 400;
+    if (showSidebar) return AI_MODAL_DIMENSIONS.minHeight;
     // Reduce minHeight when keyboard is open to prevent modal from being pushed up
-    if (keyboardHeight > 0) return 200;
-    return 400;
+    if (keyboardHeight > 0) return AI_MODAL_DIMENSIONS.minHeightKeyboard;
+    return AI_MODAL_DIMENSIONS.minHeight;
   }, [showSidebar, keyboardHeight]);
 
   return (
@@ -511,8 +426,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       />
 
       {/* CSS for animated glow effect */}
-      {Platform.OS === 'web' && (
-        <style>{`
+      {isWeb && typeof document !== 'undefined' && (
+        <style dangerouslySetInnerHTML={{ __html: `
           @keyframes glow {
             0% {
               box-shadow: 0 0 15px rgba(0, 122, 255, 0.5), 0 0 30px rgba(0, 122, 255, 0.3), 0 0 45px rgba(0, 122, 255, 0.2);
@@ -521,21 +436,21 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               box-shadow: 0 0 25px rgba(0, 122, 255, 0.7), 0 0 50px rgba(0, 122, 255, 0.5), 0 0 75px rgba(0, 122, 255, 0.3);
             }
           }
-        `}</style>
+        ` }} />
       )}
 
       {/* Help Overlay */}
       {showHelpOverlay && (
         <View
           alignItems="center"
-          backgroundColor="rgba(0, 0, 0, 0.5)"
+          backgroundColor={INTERACTIVE_COLORS.modalOverlay}
           bottom={0}
           justifyContent="center"
           left={0}
           position="absolute"
           right={0}
           top={0}
-          zIndex={9999}
+          zIndex={Z_INDEX.aiModalOverlay}
         >
           <View
             backgroundColor="$background"
@@ -543,10 +458,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             margin="$4"
             maxWidth={400}
             padding="$6"
-            shadowColor="$shadowColor"
-            shadowOffset={{ width: 0, height: 10 }}
-            shadowOpacity={0.25}
-            shadowRadius={10}
+            {...AI_MODAL_SHADOW}
           >
             <ThemedText marginBottom="$4" textAlign="center" type="title">
               Keyboard Shortcuts
@@ -582,141 +494,143 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       {/* AI Assistant Modal */}
       {isAIModalOpen && (
         <Modal
-          onRequestClose={() => setIsAIModalOpen(false)}
+          onRequestClose={createCloseHandler(setIsAIModalOpen)}
           animationType="fade"
           transparent={true}
           visible={isAIModalOpen}
         >
           <View
-            onPress={() => setIsAIModalOpen(false)}
-            alignItems={Platform.OS === 'web' ? "flex-start" : "center"}
-            backgroundColor="rgba(0, 0, 0, 0.5)"
+            onPress={createCloseHandler(setIsAIModalOpen)}
+            alignItems={isWeb ? "flex-start" : "center"}
+            backgroundColor={INTERACTIVE_COLORS.modalOverlay}
             bottom={0}
             flex={1}
-            justifyContent={Platform.OS === 'web' ? "flex-end" : "center"}
+            justifyContent={isWeb ? "flex-end" : "center"}
             left={0}
             position="absolute"
             right={0}
             top={0}
-            zIndex={9998}
+            zIndex={Z_INDEX.aiModalOverlay}
           >
             <View
-              onPress={(e: any) => e.stopPropagation()}
-              backgroundColor="$background"
+              style={{
+                transition: 'bottom 0.3s ease-out, top 0.3s ease-out, max-height 0.3s ease-out',
+              }}
+              onPress={stopPropagation}
+              backgroundColor="$backgroundSecondary"
+              borderColor={resolvedTheme === 'dark' ? '#333333' : undefined}
+              borderWidth={resolvedTheme === 'dark' ? '$0.5' : 0}
               borderRadius={showSidebar ? "$5" : "$4"}
               bottom={aiModalBottom}
               left={showSidebar ? 100 : 5}
               maxHeight={aiModalMaxHeight}
-              maxWidth={showSidebar ? 400 : undefined}
+              maxWidth={showSidebar ? AI_MODAL_DIMENSIONS.maxWidthSidebar : undefined}
               minHeight={aiModalMinHeight}
-              minWidth={showSidebar ? 300 : undefined}
+              minWidth={showSidebar ? AI_MODAL_DIMENSIONS.minWidthSidebar : undefined}
               padding={showSidebar ? "$6" : "$4"}
               position="absolute"
               right={showSidebar ? undefined : 5}
-              shadowColor="$shadowColor"
-              shadowOffset={{ width: 0, height: showSidebar ? 10 : 0 }}
-              shadowOpacity={0.25}
-              shadowRadius={10}
+              shadowColor={resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : AI_MODAL_SHADOW.shadowColor}
+              shadowOffset={{ width: AI_MODAL_SHADOW.shadowOffset.width, height: showSidebar ? AI_MODAL_SHADOW.shadowOffset.height : 0 }}
+              shadowOpacity={resolvedTheme === 'dark' ? 0.3 : AI_MODAL_SHADOW.shadowOpacity}
+              shadowRadius={AI_MODAL_SHADOW.shadowRadius}
               top={aiModalTop}
               width={showSidebar ? "auto" : undefined}
-              style={{
-                transition: 'bottom 0.3s ease-out, top 0.3s ease-out, max-height 0.3s ease-out',
-              }}
             >
               <YStack flex={1} gap="$2">
                 {/* Header */}
                 <XStack alignItems="center" justifyContent="space-between" paddingBottom="$3">
                   <XStack alignItems="center" gap="$2">
                     <View
+                      alignItems="center"
                       backgroundColor="$tint"
                       borderRadius={999}
                       height={32}
-                      width={32}
-                      alignItems="center"
                       justifyContent="center"
+                      width={32}
                     >
                       <IconSymbol name="brain" color="white" size={18} />
                     </View>
                     <YStack gap="$0.5">
-                      <ThemedText fontSize="$5" fontWeight="600">GA-X AI Assistant</ThemedText>
-                      <ThemedText color="$color" fontSize="$2" opacity={0.7}>Online • Ready to help</ThemedText>
+                      <ThemedText color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="600">GA-X AI Assistant</ThemedText>
+                      <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$2" opacity={resolvedTheme === 'dark' ? 1 : OPACITY.medium}>Online • Ready to help</ThemedText>
                     </YStack>
                   </XStack>
-                  <Button size="$2" onPress={() => setIsAIModalOpen(false)} backgroundColor="transparent">
-                    <IconSymbol name="close" size={18} />
+                  <Button onPress={createCloseHandler(setIsAIModalOpen)} backgroundColor="transparent" size="$2">
+                    <IconSymbol name="close" color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} size={ICON_SIZES.medium} />
                   </Button>
                 </XStack>
 
                 {/* Chat Messages Area */}
                 <ScrollView
                   ref={scrollViewRef}
+                  contentContainerStyle={{ paddingBottom: 16 }}
                   flex={1}
                   showsVerticalScrollIndicator={true}
-                  contentContainerStyle={{ paddingBottom: 16 }}
                 >
                   <YStack gap="$3" paddingBottom="$2">
                     {aiMessages.map((message) => (
                       <XStack
                         key={message.id}
                         alignItems="flex-start"
+                        flexDirection={message.sender === 'user' ? 'row-reverse' : 'row'}
                         gap="$2"
                         justifyContent={message.sender === 'user' ? 'flex-end' : 'flex-start'}
-                        flexDirection={message.sender === 'user' ? 'row-reverse' : 'row'}
                       >
                         {message.sender === 'ai' && (
                           <View
+                            alignItems="center"
                             backgroundColor="$tint"
                             borderRadius={999}
-                            height={32}
-                            width={32}
-                            alignItems="center"
-                            justifyContent="center"
                             flexShrink={0}
+                            height={32}
+                            justifyContent="center"
+                            width={32}
                           >
-                            <IconSymbol name="brain" color="white" size={18} />
+                            <IconSymbol name="brain" color="white" size={ICON_SIZES.medium} />
                           </View>
                         )}
-                        <YStack flex={1} gap="$1" alignItems={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
+                        <YStack alignItems={message.sender === 'user' ? 'flex-end' : 'flex-start'} flex={1} gap="$1">
                           <View
-                            backgroundColor={message.sender === 'user' ? "$tint" : "rgba(0, 122, 255, 0.1)"}
+                            backgroundColor={message.sender === 'user' ? "$tint" : (resolvedTheme === 'dark' ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 122, 255, 0.1)")}
                             borderRadius="$4"
+                            maxWidth="85%"
                             paddingHorizontal="$3"
                             paddingVertical="$2"
-                            maxWidth="85%"
                           >
-                            <ThemedText color={message.sender === 'user' ? "white" : "$color"} fontSize="$4" lineHeight="$1">
+                            <ThemedText color={message.sender === 'user' ? "white" : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color')} fontSize="$4" lineHeight="$1">
                               {message.text}
                             </ThemedText>
                           </View>
                           {message.id === 'welcome' && message.sender === 'ai' && (
                             <>
-                              <YStack gap="$2" marginTop="$2" marginLeft="$2" marginRight={0}>
+                              <YStack gap="$2" marginLeft="$2" marginRight={0} marginTop="$2">
                                 <XStack alignItems="center" gap="$2">
-                                  <IconSymbol name="check" color="$tint" size={16} />
-                                  <ThemedText color="$color" fontSize="$3" opacity={0.8}>
+                                  <IconSymbol name="check" color="$tint" size={ICON_SIZES.small} />
+                                  <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$3" opacity={resolvedTheme === 'dark' ? 1 : OPACITY.subtle}>
                                     Flight planning and route optimization
                                   </ThemedText>
                                 </XStack>
                                 <XStack alignItems="center" gap="$2">
-                                  <IconSymbol name="check" color="$tint" size={16} />
-                                  <ThemedText color="$color" fontSize="$3" opacity={0.8}>
+                                  <IconSymbol name="check" color="$tint" size={ICON_SIZES.small} />
+                                  <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$3" opacity={resolvedTheme === 'dark' ? 1 : OPACITY.subtle}>
                                     Maintenance scheduling and predictions
                                   </ThemedText>
                                 </XStack>
                                 <XStack alignItems="center" gap="$2">
-                                  <IconSymbol name="check" color="$tint" size={16} />
-                                  <ThemedText color="$color" fontSize="$3" opacity={0.8}>
+                                  <IconSymbol name="check" color="$tint" size={ICON_SIZES.small} />
+                                  <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$3" opacity={resolvedTheme === 'dark' ? 1 : OPACITY.subtle}>
                                     Document analysis and cross-referencing
                                   </ThemedText>
                                 </XStack>
                                 <XStack alignItems="center" gap="$2">
-                                  <IconSymbol name="check" color="$tint" size={16} />
-                                  <ThemedText color="$color" fontSize="$3" opacity={0.8}>
+                                  <IconSymbol name="check" color="$tint" size={ICON_SIZES.small} />
+                                  <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$3" opacity={resolvedTheme === 'dark' ? 1 : OPACITY.subtle}>
                                     Regulatory compliance checks
                                   </ThemedText>
                                 </XStack>
                               </YStack>
-                              <ThemedText color="$color" fontSize="$2" opacity={0.6} marginTop="$1">
+                              <ThemedText color={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'} fontSize="$2" marginTop="$1" opacity={resolvedTheme === 'dark' ? 0.8 : OPACITY.light}>
                                 Ask me anything about your aviation operations!
                               </ThemedText>
                             </>
@@ -724,15 +638,15 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                         </YStack>
                         {message.sender === 'user' && (
                           <View
-                            backgroundColor="rgba(0, 122, 255, 0.2)"
-                            borderRadius={999}
-                            height={32}
-                            width={32}
                             alignItems="center"
-                            justifyContent="center"
+                            backgroundColor={resolvedTheme === 'dark' ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 122, 255, 0.2)"}
+                            borderRadius={999}
                             flexShrink={0}
+                            height={32}
+                            justifyContent="center"
+                            width={32}
                           >
-                            <IconSymbol name="account" color="$tint" size={18} />
+                            <IconSymbol name="account" color="$tint" size={ICON_SIZES.medium} />
                           </View>
                         )}
                       </XStack>
@@ -743,8 +657,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                 {/* Input Area */}
                 <XStack
                   alignItems="center"
-                  backgroundColor="rgba(0, 0, 0, 0.03)"
-                  borderColor="$borderColor"
+                  backgroundColor={resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : INTERACTIVE_COLORS.searchBackground}
+                  borderColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
                   borderRadius="$4"
                   borderWidth="$0.5"
                   gap="$2"
@@ -753,36 +667,9 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                 >
                   <Input
                     ref={aiInputRef}
-                    placeholder="Type your message..."
-                    flex={1}
-                    backgroundColor="transparent"
-                    borderWidth={0}
-                    fontSize="$4"
-                    paddingHorizontal={0}
-                    autoCapitalize="sentences"
-                    autoCorrect={true}
-                    value={aiMessageInput}
-                    onChangeText={setAIMessageInput}
-                    onSubmitEditing={(e: any) => {
-                      if (aiMessageInput.trim()) {
-                        // Prevent default form submission behavior
-                        if (e?.preventDefault) {
-                          e.preventDefault();
-                        }
-                        if (e?.nativeEvent?.preventDefault) {
-                          e.nativeEvent.preventDefault();
-                        }
-                        handleSendMessage();
-                        // Return false to prevent form submission
-                        return false;
-                      }
-                    }}
-                    blurOnSubmit={false}
-                    returnKeyType="send"
-                    autoFocus={Platform.OS === 'web'}
                     onBlur={(e: any) => {
                       // Prevent blur when sending message (keep keyboard open)
-                      if (Platform.OS === 'web' && isSendingMessage) {
+                      if (isWeb && isSendingMessage) {
                         // Small delay to allow state update, then refocus
                         setTimeout(() => {
                           if (aiInputRef.current) {
@@ -803,18 +690,47 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                         }, 10);
                       }
                     }}
+                    onChangeText={setAIMessageInput}
+                    onSubmitEditing={(e: any) => {
+                      if (aiMessageInput.trim()) {
+                        // Prevent default form submission behavior
+                        if (e?.preventDefault) {
+                          e.preventDefault();
+                        }
+                        if (e?.nativeEvent?.preventDefault) {
+                          e.nativeEvent.preventDefault();
+                        }
+                        handleSendMessage();
+                        // Return false to prevent form submission
+                        return false;
+                      }
+                    }}
+                    value={aiMessageInput}
+                    placeholder="Type your message..."
+                    autoCapitalize="sentences"
+                    autoCorrect={true}
+                    autoFocus={isWeb}
+                    backgroundColor="transparent"
+                    blurOnSubmit={false}
+                    borderWidth={0}
+                    color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
+                    flex={1}
+                    fontSize="$4"
+                    paddingHorizontal={0}
+                    placeholderTextColor={resolvedTheme === 'dark' ? '#CCCCCC' : '$color'}
+                    returnKeyType="send"
                   />
                   <Button
+                    onPress={handleSendMessage}
+                    disabled={!aiMessageInput.trim()}
                     backgroundColor={aiMessageInput.trim() ? "$tint" : "$borderColor"}
                     borderRadius={999}
                     height={36}
-                    width={36}
+                    opacity={aiMessageInput.trim() ? OPACITY.full : OPACITY.veryLight}
                     padding={0}
-                    onPress={handleSendMessage}
-                    disabled={!aiMessageInput.trim()}
-                    opacity={aiMessageInput.trim() ? 1 : 0.5}
+                    width={36}
                   >
-                    <IconSymbol name="arrow-up" color="white" size={18} />
+                    <IconSymbol name="arrow-up" color="white" size={ICON_SIZES.medium} />
                   </Button>
                 </XStack>
               </YStack>
@@ -825,13 +741,13 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
       {/* Header - Full width */}
       <View
-        backgroundColor="$background"
-        borderBottomColor="$borderColor"
+        backgroundColor="$backgroundSecondary"
+        borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
         borderBottomWidth="$0.5"
         position="relative"
-        shadowColor="$shadowColor"
+        shadowColor={resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : '$shadowColor'}
         shadowOffset={{ width: 0, height: 1 }}
-        shadowOpacity={0.1}
+        shadowOpacity={resolvedTheme === 'dark' ? 0.3 : 0.1}
         shadowRadius={2}
       >
         <XStack
@@ -860,25 +776,25 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             />
             
             {/* News icon - only on big screens */}
-            {(Platform.OS === 'web' || (dimensionsReady && showSidebar)) && (
+            {(isWeb || (dimensionsReady && showSidebar)) && (
               <Button
-                onPress={() => router.push('/(tabs)/news' as any)}
+                onPress={() => navigateTo('/(tabs)/news')}
                 backgroundColor="transparent"
                 height="100%"
                 hoverStyle={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                  backgroundColor: INTERACTIVE_COLORS.hover,
                   transform: 'scale(1.02)',
                 }}
                 padding="$2"
                 pressStyle={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: INTERACTIVE_COLORS.press,
                   transform: 'scale(0.98)',
                 }}
                 size="$2"
               >
                 <IconSymbol
                   name="newspaper"
-                  color={pathname.includes('/news') || pathname === '/news' ? "$tint" : "$color"}
+                  color={pathname.includes('/news') || pathname === '/news' ? "$tint" : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color')}
                   size={24}
                 />
               </Button>
@@ -896,7 +812,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
           {/* GA-X title - DEAD CENTER using absolute positioning */}
           <Button
-            style={Platform.OS === 'web' ? { 
+            style={isWeb ? { 
               cursor: 'pointer',
               transform: 'translateX(-50%)'
             } : {}}
@@ -915,16 +831,16 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             backgroundColor="transparent"
             bottom={0}
             height="100%"
-            hoverStyle={Platform.OS === 'web' ? {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            hoverStyle={isWeb ? {
+              backgroundColor: INTERACTIVE_COLORS.hover,
               transform: 'translateX(-50%)',
             } : {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              backgroundColor: INTERACTIVE_COLORS.hover,
             }}
             left="50%"
             position="absolute"
             pressStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: INTERACTIVE_COLORS.press,
             }}
             top={0}
           >
@@ -932,7 +848,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               style={{
                 userSelect: 'none',
               }}
-              color={pathname === '/' ? "$tint" : "$color"}
+              color={resolvedTheme === 'dark' ? '#FFFFFF' : (pathname === '/' ? "$tint" : "$color")}
               textAlign="center"
               type="title"
             >
@@ -996,43 +912,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
       {/* Floating AI Assistant Button - All screen sizes - Outside content area */}
       <Button
-        animation="slow"
-        bottom={shouldReserveSidebarSpace ? 30 : 76}
-        left={shouldReserveSidebarSpace ? 30 : 20}
-        onPress={() => {
-          setIsAIModalOpen(true);
-          // Trigger focus immediately after user interaction (iOS Safari requirement)
-          if (Platform.OS === 'web' && typeof document !== 'undefined') {
-            setTimeout(() => {
-              const nativeInput = document.querySelector('input[placeholder*="Type your message"]') as HTMLInputElement;
-              if (nativeInput) {
-                nativeInput.focus();
-                nativeInput.click(); // iOS Safari sometimes needs click to trigger keyboard
-              }
-            }, 100);
-          }
-        }}
-        alignItems="center"
-        backgroundColor="rgba(255, 255, 255, 0.8)"
-        borderRadius={999}
-        height={56}
-        hoverStyle={Platform.OS === 'web' ? {
-          backgroundColor: 'rgba(0, 122, 255, 0.25)',
-          scale: 1.05,
-          userSelect: 'none',
-        } : {
-          backgroundColor: 'rgba(0, 122, 255, 0.25)',
-          scale: 1.05,
-        }}
-        justifyContent="center"
-        paddingHorizontal="$3"
-        paddingVertical="$3"
-        position="absolute"
-        pressStyle={{
-          backgroundColor: 'rgba(0, 122, 255, 0.35)',
-          scale: 0.95,
-        }}
-        style={Platform.OS === 'web' ? {
+        style={isWeb ? {
           userSelect: 'none',
           animation: 'glow 2s ease-in-out infinite alternate',
           zIndex: 9990,
@@ -1044,12 +924,48 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
           elevation: 10,
           zIndex: 9990,
         }}
+        onPress={() => {
+          setIsAIModalOpen(true);
+        // Trigger focus immediately after user interaction (iOS Safari requirement)
+        if (isBrowserEnvironment()) {
+            setTimeout(() => {
+              const nativeInput = document.querySelector('input[placeholder*="Type your message"]') as HTMLInputElement;
+              if (nativeInput) {
+                nativeInput.focus();
+                nativeInput.click(); // iOS Safari sometimes needs click to trigger keyboard
+              }
+            }, 100);
+          }
+        }}
+        alignItems="center"
+        animation="slow"
+        backgroundColor={resolvedTheme === 'dark' ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.8)"}
+        borderRadius={999}
+        bottom={shouldReserveSidebarSpace ? 30 : 76}
+        height={56}
+        hoverStyle={isWeb ? {
+          backgroundColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 122, 255, 0.25)',
+          scale: 1.05,
+          userSelect: 'none',
+        } : {
+          backgroundColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 122, 255, 0.25)',
+          scale: 1.05,
+        }}
+        justifyContent="center"
+        left={shouldReserveSidebarSpace ? 30 : 20}
+        paddingHorizontal="$3"
+        paddingVertical="$3"
+        position="absolute"
+        pressStyle={{
+          backgroundColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 122, 255, 0.35)',
+          scale: 0.95,
+        }}
         width={56}
         zIndex={9990}
       >
         <IconSymbol
           name="brain"
-          color="#007AFF"
+          color={resolvedTheme === 'dark' ? "#FFFFFF" : "#007AFF"}
           size={24}
         />
       </Button>
@@ -1059,20 +975,17 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         <>
           <View
             alignItems="center"
-            backgroundColor="$background"
-            borderTopColor="$borderColor"
+            backgroundColor="$backgroundSecondary"
+            borderTopColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
             borderTopWidth="$0.5"
             flexDirection="row"
             justifyContent="space-around"
             paddingHorizontal={0}
             paddingVertical="$1.5"
-            shadowColor="$shadowColor"
-            shadowOffset={{ width: 0, height: -1 }}
-            shadowOpacity={0.1}
-            shadowRadius={2}
+            {...BOTTOM_NAV_SHADOW}
           >
             {bottomNavItems.map((item, index) => {
-              const href = 'href' in item ? item.href : (item as any).href;
+              const href = getItemHref(item);
               const isActive = getCurrentTabIndex() === index;
               return (
                 <Button
@@ -1092,8 +1005,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
                 >
                   <IconSymbol
                     name={(item.icon || (item as any).icon) as any}
-                    color={isActive ? "$tint" : "$tabIconDefault"}
-                    size={22}
+                    color={getIconColor(isActive, resolvedTheme)}
+                    size={ICON_SIZES.large}
                   />
                 </Button>
               );
@@ -1110,6 +1023,9 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             zIndex={1002}
           >
             <Button
+              style={{
+                marginBottom: -20,
+              }}
               onPress={() => {
                 // Focus search or open search modal
                 handleFocusSearch();
@@ -1117,16 +1033,17 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               alignItems="center"
               backgroundColor="$tint"
               borderRadius={999}
+              elevation={8}
               height={40}
               hoverStyle={{
-                backgroundColor: 'rgba(0, 122, 255, 0.9)',
+                backgroundColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 122, 255, 0.9)',
                 scale: 1.05,
               }}
               justifyContent="center"
               paddingHorizontal="$2.5"
               paddingVertical="$2.5"
               pressStyle={{
-                backgroundColor: 'rgba(0, 122, 255, 0.8)',
+                backgroundColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 122, 255, 0.8)',
                 scale: 0.95,
               }}
               shadowColor="$shadowColor"
@@ -1134,15 +1051,11 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               shadowOpacity={0.3}
               shadowRadius={8}
               width={40}
-              elevation={8}
-              style={{
-                marginBottom: -20,
-              }}
             >
               <IconSymbol
                 name="magnify"
                 color="white"
-                size={18}
+                size={ICON_SIZES.medium}
               />
             </Button>
           </View>

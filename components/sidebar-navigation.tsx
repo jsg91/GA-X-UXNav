@@ -1,11 +1,23 @@
 import { usePathname, useRouter } from 'expo-router';
-import React, { useMemo, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { Button, View, YStack } from 'tamagui';
 
+import { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_EXPANDED_WIDTH, ICON_SIZES } from '@/constants/layout';
+import { SIDEBAR_SHADOW } from '@/constants/shadow-styles';
+import { ANIMATION_DELAYS } from '@/constants/animation-delays';
+import { Z_INDEX } from '@/constants/z-index';
+import { OPACITY } from '@/constants/opacity';
+import { TRANSFORM_SCALES } from '@/constants/transform-scales';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { NAVIGATION_CONFIG, Role, generateNavigationForRole } from '@/constants/NAVIGATION';
+import { Role } from '@/constants/NAVIGATION';
+import { useNavigationItems } from '@/hooks/use-navigation-items';
+import { getIconColor } from '@/utils/icons';
+import { isWeb } from '@/utils/platform';
+import { getItemHref, isTabActive } from '@/utils/navigation';
+import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { navigateTo } from '@/utils/router';
+import { useThemeContext } from '@/hooks/use-theme-context';
 
 interface SidebarNavigationProps {
   currentRole?: Role;
@@ -14,6 +26,7 @@ interface SidebarNavigationProps {
 }
 
 export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }: SidebarNavigationProps) {
+  const { resolvedTheme } = useThemeContext();
   const router = useRouter();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -21,19 +34,11 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
   const [isVisible, setIsVisible] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Generate navigation items based on current role
-  const navigationItems = useMemo(() => {
-    if (currentRole) {
-      return generateNavigationForRole(currentRole);
-    }
-    // Fallback to old navigation config if no role
-    return NAVIGATION_CONFIG.tabBar.items.filter(item => {
-      return ('largeScreen' in item && item.largeScreen) || item.visible;
-    });
-  }, [currentRole]);
+  // Generate navigation items based on current role (for large screen/sidebar)
+  const navigationItems = useNavigationItems(currentRole, { forLargeScreen: true });
 
   const handleTabPress = (href: string) => {
-    router.push(href as any);
+    navigateTo(href);
     if (onNavigate) {
       onNavigate(href);
     }
@@ -43,13 +48,13 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
       if (!isHovered) {
         setIsExpanded(false);
       }
-    }, 1000);
+    }, ANIMATION_DELAYS.feedback);
   };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (hasInitialized) {
-      setTimeout(() => setIsExpanded(true), 50); // Small delay for smooth expansion
+      setTimeout(() => setIsExpanded(true), ANIMATION_DELAYS.quick);
     }
   };
 
@@ -64,7 +69,7 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
     setTimeout(() => {
       setIsVisible(true);
       setHasInitialized(true);
-    }, 100);
+    }, ANIMATION_DELAYS.standard);
   }, []);
 
   // Notify parent of expansion changes
@@ -72,30 +77,29 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
     onExpansionChange?.(isExpanded);
   }, [isExpanded, onExpansionChange]);
 
-  // Check if a tab is active
-  const isTabActive = (href: string | null | undefined) => {
-    if (!href) return false;
-    if (href === '/(tabs)/' && pathname === '/') return true;
-    if (href && pathname.includes(href.replace('/(tabs)/', ''))) return true;
-    return href === pathname;
-  };
+  // Check if a tab is active using shared utility
+  const checkTabActive = (href: string | null | undefined) => isTabActive(href, pathname);
 
   const visibleItems = navigationItems;
 
-  // Header height - matches the header minHeight in responsive-navigation
-  const HEADER_HEIGHT = 56;
   // Sidebar starts at top of content area (which is already below header)
   const SIDEBAR_TOP_OFFSET = 0;
 
   return (
     <YStack
-      onMouseEnter={Platform.OS === 'web' ? handleMouseEnter : undefined}
-      onMouseLeave={Platform.OS === 'web' ? handleMouseLeave : undefined}
+      onMouseEnter={isWeb ? handleMouseEnter : undefined}
+      onMouseLeave={isWeb ? handleMouseLeave : undefined}
       animation="slow"
-      backgroundColor="$background"
+      backgroundColor="$backgroundSecondary"
       borderBottomRightRadius="$5"
-      borderRightColor="$borderColor"
+      borderLeftColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
+      borderLeftWidth="$0.5"
+      borderRightColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
       borderRightWidth="$0.5"
+      borderTopColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
+      borderTopWidth="$0.5"
+      borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
+      borderBottomWidth="$0.5"
       gap="$2"
       justifyContent="flex-start"
       left={0}
@@ -104,20 +108,21 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
       paddingBottom="$4"
       paddingTop={0}
       position="absolute"
-      scale={isVisible ? 1 : 0.95}
-      shadowColor={isHovered ? "$shadowColor" : "transparent"}
-      shadowOffset={{ width: 1, height: 0 }}
-      shadowOpacity={isHovered ? 0.15 : 0}
-      shadowRadius={2}
+      scale={isVisible ? TRANSFORM_SCALES.normal : TRANSFORM_SCALES.initial}
+      shadowColor={isHovered ? (resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : SIDEBAR_SHADOW.shadowColor) : "transparent"}
+      shadowOffset={SIDEBAR_SHADOW.shadowOffset}
+      shadowOpacity={isHovered ? (resolvedTheme === 'dark' ? 0.3 : SIDEBAR_SHADOW.shadowOpacity) : 0}
+      shadowRadius={SIDEBAR_SHADOW.shadowRadius}
       top={SIDEBAR_TOP_OFFSET}
       transition="width 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-      width={isExpanded ? 240 : 72}
-      zIndex={1000}
+      width={isExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH}
+      zIndex={Z_INDEX.sidebar}
     >
       {/* Navigation Items */}
       <YStack gap={0}>
         {visibleItems.map((item, index) => {
-          const isActive = isTabActive(item.href);
+          const href = getItemHref(item);
+          const isActive = checkTabActive(href);
           const isLast = index === visibleItems.length - 1;
           return (
             <React.Fragment key={item.id}>
@@ -125,37 +130,37 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
                 style={{
                   userSelect: 'none',
                 }}
-                onPress={() => handleTabPress('href' in item ? item.href : (item as any).href)}
+                onPress={() => handleTabPress(href || '')}
                 alignItems="center"
                 backgroundColor="transparent"
                 borderRadius={0}
                 flexDirection="row"
                 gap="$3"
-                hoverStyle={Platform.OS === 'web' ? {
-                  backgroundColor: "rgba(0, 0, 0, 0.05)",
-                  scale: 1.02,
+                hoverStyle={isWeb ? {
+                  backgroundColor: INTERACTIVE_COLORS.hover,
+                  scale: TRANSFORM_SCALES.hover,
                   userSelect: 'none',
                 } : undefined}
                 justifyContent="flex-start"
                 marginHorizontal="$2"
-                opacity={1}
+                opacity={OPACITY.full}
                 paddingHorizontal="$4"
                 paddingVertical="$4"
                 pressStyle={{
-                  backgroundColor: "rgba(0, 0, 0, 0.05)",
-                  scale: 0.98,
+                  backgroundColor: INTERACTIVE_COLORS.hover,
+                  scale: TRANSFORM_SCALES.press,
                 }}
               >
                 <IconSymbol
                   name={(item.icon || (item as any).icon) as any}
-                  color={isActive ? "$tint" : "$tabIconDefault"}
-                  size={24}
+                  color={getIconColor(isActive, resolvedTheme)}
+                  size={ICON_SIZES.xlarge}
                 />
                 <ThemedText
                   style={{
                     userSelect: 'none',
                   }}
-                  color="$color"
+                  color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
                   fontSize="$4"
                   fontWeight="$3"
                   numberOfLines={1}
@@ -166,7 +171,7 @@ export function SidebarNavigation({ currentRole, onNavigate, onExpansionChange }
               </Button>
               {!isLast && (
                 <View
-                  backgroundColor="rgba(0, 0, 0, 0.08)"
+                  backgroundColor={resolvedTheme === 'dark' ? '#333333' : INTERACTIVE_COLORS.groupHeaderBorder}
                   height={1}
                   marginHorizontal="$2"
                   marginVertical="$1"

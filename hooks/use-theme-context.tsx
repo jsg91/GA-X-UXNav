@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -21,18 +21,38 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Load theme preference from storage on mount
   useEffect(() => {
-    AsyncStorage.getItem(THEME_STORAGE_KEY).then((storedTheme) => {
-      if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
-        setTheme(storedTheme as Theme);
+    const loadTheme = async () => {
+      try {
+        let storedTheme: string | null = null;
+        if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+          storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        } else {
+          storedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        }
+        if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
+          setTheme(storedTheme as Theme);
+        }
+      } catch (error) {
+        console.warn('Failed to load theme preference:', error);
+      } finally {
+        setMounted(true);
       }
-      setMounted(true);
-    });
+    };
+    loadTheme();
   }, []);
 
   // Save theme preference to storage when changed
   const handleSetTheme = (newTheme: Theme) => {
     setTheme(newTheme);
-    AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
+    try {
+      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      } else {
+        AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      }
+    } catch (error) {
+      console.warn('Failed to save theme preference:', error);
+    }
   };
 
   // Resolve the actual theme (system or manual override)
