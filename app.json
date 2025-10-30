@@ -3,7 +3,7 @@
     "name": "GA-X UXNav",
     "slug": "ga-x",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "ga-x",
     "userInterfaceStyle": "automatic",
