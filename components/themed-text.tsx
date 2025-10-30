@@ -1,5 +1,5 @@
-import { Text  } from 'tamagui';
-import type {TextProps} from 'tamagui';
+import type { TextProps } from 'tamagui';
+import { Text } from 'tamagui';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { getTextColorKey } from '@/utils/theme-colors';
@@ -19,9 +19,12 @@ export function ThemedText({
   level = 'primary',
   ...rest
 }: ThemedTextProps) {
-  // Determine color key based on level using shared utility
-  const colorKey = getTextColorKey(level);
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, colorKey as any);
+  // Extract color from rest to check if it's explicitly provided
+  const { color: explicitColor, ...otherRest } = rest;
+
+  // If an explicit color is provided, use it; otherwise compute theme color
+  const color = explicitColor ??
+    useThemeColor({ light: lightColor, dark: darkColor }, getTextColorKey(level) as any);
 
   // Get style properties for the text type
   const { fontSize, fontWeight, lineHeight } = getTextTypeStyles(type);
@@ -33,7 +36,7 @@ export function ThemedText({
       fontSize={fontSize}
       fontWeight={fontWeight}
       lineHeight={lineHeight}
-      {...rest}
+      {...otherRest}
     />
   );
 }

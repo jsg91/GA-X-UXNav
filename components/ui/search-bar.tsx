@@ -5,14 +5,14 @@ import { Button, Input, XStack, YStack } from 'tamagui';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ANIMATION_DELAYS } from '@/constants/animation-delays';
-import { MODAL_PANEL_DIMENSIONS , ICON_SIZES } from '@/constants/layout';
-import { SEARCH_DROPDOWN_SHADOW } from '@/constants/shadow-styles';
-import { Z_INDEX } from '@/constants/z-index';
+import { ICON_SIZES, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
 import { OPACITY } from '@/constants/opacity';
+import { SEARCH_DROPDOWN_SHADOW } from '@/constants/shadow-styles';
 import { TRANSFORM_SCALES } from '@/constants/transform-scales';
-import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
-import { getActiveColor, getActiveFontWeight } from '@/utils/active-state';
+import { Z_INDEX } from '@/constants/z-index';
 import { useThemeContext } from '@/hooks/use-theme-context';
+import { getActiveColor, getActiveFontWeight } from '@/utils/active-state';
+import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
 
 interface SearchResult {
   id: string;
@@ -176,7 +176,17 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
 
   // Close dropdown when clicking outside and handle keyboard navigation
   useEffect(() => {
+    // Only run in web browser environment with document.addEventListener support
     if (Platform.OS !== 'web') return;
+    
+    // Check if document.addEventListener is available (not available in Expo Go)
+    const hasDocumentAddEventListener = typeof document !== 'undefined' 
+      && typeof document.addEventListener === 'function';
+    
+    if (!hasDocumentAddEventListener) {
+      // Not a browser environment (e.g., Expo Go), skip event listeners
+      return;
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -205,13 +215,25 @@ export function SearchBar({ placeholder = "Search GA-X...", onSearch, onResultSe
     };
 
     if (isFocused) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
+      try {
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('Failed to add document event listeners:', error);
+        }
+      }
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      try {
+        if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+          document.removeEventListener('mousedown', handleClickOutside);
+          document.removeEventListener('keydown', handleKeyDown);
+        }
+      } catch (error) {
+        // Silently fail cleanup
+      }
     };
   }, [isFocused, searchResults, selectedIndex, handleResultSelect]);
 

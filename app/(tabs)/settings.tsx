@@ -42,7 +42,7 @@ export default function SettingsScreen() {
                 justifyContent="flex-start"
                 padding="$3"
               >
-                <XStack alignItems="center" flex={1} gap="$3">
+                <XStack alignItems="left" flex={1} gap="$3">
                   <IconSymbol
                     name="weather-sunny"
                     color={theme === 'light' ? '$tint' : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color')}
@@ -68,7 +68,7 @@ export default function SettingsScreen() {
                 justifyContent="flex-start"
                 padding="$3"
               >
-                <XStack alignItems="center" flex={1} gap="$3">
+                <XStack alignItems="left" flex={1} gap="$3">
                   <IconSymbol
                     name="weather-night"
                     color={theme === 'dark' ? '$tint' : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color')}
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
                 justifyContent="flex-start"
                 padding="$3"
               >
-                <XStack alignItems="center" flex={1} gap="$3">
+                <XStack alignItems="left"flex={1} gap="$3">
                   <IconSymbol
                     name="theme-light-dark"
                     color={theme === 'system' ? '$tint' : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color')}

@@ -1,20 +1,20 @@
 import { ThemedText } from '@/components/themed-text';
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { HEADER_HEIGHT, HEADER_PADDING, SIDEBAR_BREAKPOINT, ICON_SIZES, MENU_ITEM_MIN_HEIGHT, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
-import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
-import { OPACITY } from '@/constants/opacity';
-import { Z_INDEX } from '@/constants/z-index';
+import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MENU_ITEM_MIN_HEIGHT, MODAL_PANEL_DIMENSIONS, SIDEBAR_BREAKPOINT } from '@/constants/layout';
 import { ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
-import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
-import { stopPropagation } from '@/utils/event-handlers';
-import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
-import { filterVisibleItems } from '@/utils/navigation-items';
-import { getActiveColor, getActiveFontWeight, getActiveOpacity } from '@/utils/active-state';
-import { getMenuItemHoverStyle, getMenuItemPressStyle, MENU_ITEM_WITH_HEIGHT_STYLES } from '@/utils/menu-item-styles';
-import { INTERACTIVE_COLORS, getTintBackground, getTintBackgroundHover, getTintBackgroundPress, getTintBorder, getTintBorderHover } from '@/utils/interactive-colors';
-import { isWeb } from '@/utils/platform';
+import { OPACITY } from '@/constants/opacity';
+import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
+import { Z_INDEX } from '@/constants/z-index';
 import { useThemeContext } from '@/hooks/use-theme-context';
+import { getActiveColor, getActiveFontWeight, getActiveOpacity } from '@/utils/active-state';
+import { stopPropagation } from '@/utils/event-handlers';
+import { INTERACTIVE_COLORS, getTintBackground, getTintBackgroundHover, getTintBackgroundPress, getTintBorder, getTintBorderHover } from '@/utils/interactive-colors';
+import { MENU_ITEM_WITH_HEIGHT_STYLES, getMenuItemHoverStyle, getMenuItemPressStyle } from '@/utils/menu-item-styles';
+import { filterVisibleItems } from '@/utils/navigation-items';
+import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
+import { isWeb } from '@/utils/platform';
+import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
 import React, { useMemo, useState } from 'react';
 import { Modal, useWindowDimensions } from 'react-native';
 import {
@@ -67,7 +67,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
         paddingBottom="$3"
       >
         <XStack justifyContent="space-between">
-          <ThemedText color="$color" fontSize="$5" fontWeight="$6">
+          <ThemedText color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$6">
             User Context
           </ThemedText>
           <Button
@@ -78,7 +78,7 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
           >
             <IconSymbol
               name="close"
-              color="$color"
+              color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
               size={ICON_SIZES.medium}
             />
           </Button>
@@ -105,15 +105,15 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                 <IconSymbol
                   style={{ opacity: OPACITY.veryLight }}
                   name="chevron-down"
-                  color="$color"
+                  color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
                   size={ICON_SIZES.medium}
                 />
                 <IconSymbol
                   name={group.icon as any}
-                  color="$color"
+                  color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
                   size={ICON_SIZES.large}
                 />
-                <ThemedText style={{ opacity: OPACITY.subtle }} color="$color" fontSize="$5" fontWeight="$7" marginLeft="$1">
+                <ThemedText style={{ opacity: OPACITY.subtle }} color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$7" marginLeft="$1">
                   {group.name}
                 </ThemedText>
               </XStack>
@@ -136,11 +136,11 @@ export function RoleSwitcher({ currentRole, onRoleChange }: RoleSwitcherProps) {
                     <IconSymbol
                       style={{ opacity: getActiveOpacity(isSelected) }}
                       name={role.icon as any}
-                      color={getActiveColor(isSelected)}
+                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
                       size={ICON_SIZES.large}
                     />
                     <ThemedText
-                      color={getActiveColor(isSelected)}
+                      color={resolvedTheme === 'dark' ? (isSelected ? '$tint' : '#FFFFFF') : getActiveColor(isSelected)}
                       flex={1}
                       fontSize="$5"
                       fontWeight={getActiveFontWeight(isSelected) as any}

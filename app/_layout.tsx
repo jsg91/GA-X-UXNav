@@ -1,10 +1,12 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import * as NavigationBar from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
-import { preventAutoHideAsync, hideAsync } from 'expo-splash-screen';
+import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import { PortalProvider, TamaguiProvider, Theme } from 'tamagui';
 
@@ -45,6 +47,18 @@ function AppLayout() {
       hideAsync();
     }
   }, [loaded]);
+
+  // Hide Android navigation bar for immersive experience
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden').catch((error) => {
+        console.warn('Failed to hide navigation bar:', error);
+      });
+      NavigationBar.setBehaviorAsync('overlay-swipe').catch((error) => {
+        console.warn('Failed to set navigation bar behavior:', error);
+      });
+    }
+  }, []);
 
   if (!loaded) {
     return null;

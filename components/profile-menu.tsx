@@ -1,7 +1,18 @@
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
 import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
+import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
+import { TRANSFORM_SCALES } from '@/constants/transform-scales';
 import { useThemeContext } from '@/hooks/use-theme-context';
+import { stopPropagation } from '@/utils/event-handlers';
+import { getDestructiveColor, INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { getMenuItemHoverStyle, getMenuItemPressStyle, MENU_ITEM_BUTTON_STYLES } from '@/utils/menu-item-styles';
+import { isTabActive } from '@/utils/navigation';
+import { filterVisibleItems } from '@/utils/navigation-items';
+import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
+import { navigateTo } from '@/utils/router';
+import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
 import { usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, useWindowDimensions } from 'react-native';
@@ -12,18 +23,6 @@ import {
   XStack,
   YStack
 } from 'tamagui';
-import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
-import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
-import { TRANSFORM_SCALES } from '@/constants/transform-scales';
-import { isTabActive } from '@/utils/navigation';
-import { filterVisibleItems } from '@/utils/navigation-items';
-import { stopPropagation } from '@/utils/event-handlers';
-import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
-import { calculateMaxPanelHeight } from '@/utils/panel-calculations';
-import { getMenuItemHoverStyle, getMenuItemPressStyle, MENU_ITEM_BUTTON_STYLES } from '@/utils/menu-item-styles';
-import { getDestructiveColor, INTERACTIVE_COLORS } from '@/utils/interactive-colors';
-import { getActiveColor } from '@/utils/active-state';
-import { navigateTo } from '@/utils/router';
 import { ThemedText } from './themed-text';
 
 export function ProfileMenu() {
@@ -71,7 +70,11 @@ export function ProfileMenu() {
         paddingBottom="$3"
       >
         <XStack justifyContent="space-between">
-          <ThemedText color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'} fontSize="$5" fontWeight="$6">
+          <ThemedText
+            type="title"
+            level="primary"
+            color={resolvedTheme === 'dark' ? '#FFFFFF' : undefined}
+          >
             Profile Menu
           </ThemedText>
           <Button
@@ -82,7 +85,7 @@ export function ProfileMenu() {
           >
             <IconSymbol
               name="close"
-              color={resolvedTheme === 'dark' ? '#FFFFFF' : '$color'}
+              color="$color"
               size={ICON_SIZES.medium}
             />
           </Button>
@@ -96,13 +99,7 @@ export function ProfileMenu() {
         {visibleItems.map((item) => {
           const isActive = isItemActive(item);
           const isLogout = item.id === 'logout';
-          const iconColor = isLogout 
-            ? getDestructiveColor(resolvedTheme === 'dark') 
-            : (resolvedTheme === 'dark' ? (isActive ? '$tint' : '#FFFFFF') : getActiveColor(isActive));
-          const textColor = isLogout 
-            ? getDestructiveColor(resolvedTheme === 'dark') 
-            : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color');
-          
+
           return (
             <Button
               key={item.id}
@@ -111,17 +108,23 @@ export function ProfileMenu() {
               hoverStyle={getMenuItemHoverStyle(true)}
               pressStyle={getMenuItemPressStyle(true)}
             >
-              <XStack alignItems="center" gap="$3" justifyContent="flex-start" width="100%">
+              <XStack alignItems="left" gap="$3" justifyContent="flex-start" width="100%">
                 <IconSymbol
                   name={item.icon as any}
-                  color={iconColor}
+                  color={isLogout
+                    ? getDestructiveColor(resolvedTheme === 'dark')
+                    : (isActive ? '$tint' : (resolvedTheme === 'dark' ? '#FFFFFF' : '$color'))
+                  }
                   size={ICON_SIZES.small}
                 />
                 <ThemedText
-                  color={textColor}
+                  color={isLogout
+                    ? getDestructiveColor(resolvedTheme === 'dark')
+                    : (resolvedTheme === 'dark' ? '#FFFFFF' : (isActive ? '$color' : '$color'))
+                  }
                   flex={1}
                   fontSize="$4"
-                  fontWeight="$4"
+                  fontWeight={isActive ? '$6' : '$4'}
                   textAlign="left"
                 >
                   {item.name}

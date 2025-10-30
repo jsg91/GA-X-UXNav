@@ -11,25 +11,25 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { SearchBar } from '@/components/ui/search-bar';
+import { ANIMATION_DELAYS } from '@/constants/animation-delays';
+import { AI_MODAL_DIMENSIONS, HEADER_HEIGHT, ICON_SIZES, SIDEBAR_BREAKPOINT } from '@/constants/layout';
 import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, NAVIGATION_CONFIG, Role } from '@/constants/NAVIGATION';
+import { OPACITY } from '@/constants/opacity';
+import { REFOCUS_DELAYS } from '@/constants/refocus-delays';
+import { AI_MODAL_SHADOW, BOTTOM_NAV_SHADOW } from '@/constants/shadow-styles';
+import { Z_INDEX } from '@/constants/z-index';
+import { refocusInput as refocusInputUtil, useAutoFocus } from '@/hooks/use-auto-focus';
 import { useNavigationHotkeys } from '@/hooks/use-navigation-hotkeys';
 import { useNavigationItems } from '@/hooks/use-navigation-items';
 import { useRoleContext } from '@/hooks/use-role-context';
 import { useThemeContext } from '@/hooks/use-theme-context';
-import { HEADER_HEIGHT, SIDEBAR_BREAKPOINT, AI_MODAL_DIMENSIONS, ICON_SIZES } from '@/constants/layout';
-import { AI_MODAL_SHADOW, BOTTOM_NAV_SHADOW } from '@/constants/shadow-styles';
-import { ANIMATION_DELAYS } from '@/constants/animation-delays';
-import { REFOCUS_DELAYS } from '@/constants/refocus-delays';
-import { Z_INDEX } from '@/constants/z-index';
-import { OPACITY } from '@/constants/opacity';
-import { refocusInput as refocusInputUtil, useAutoFocus } from '@/hooks/use-auto-focus';
-import { getIconColor } from '@/utils/icons';
-import { isBrowserEnvironment, isWeb } from '@/utils/platform';
-import { getItemHref, isTabActive } from '@/utils/navigation';
 import { stopPropagation } from '@/utils/event-handlers';
-import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
-import { navigateTo } from '@/utils/router';
+import { getIconColor } from '@/utils/icons';
 import { INTERACTIVE_COLORS } from '@/utils/interactive-colors';
+import { getItemHref, isTabActive } from '@/utils/navigation';
+import { isBrowserEnvironment, isWeb } from '@/utils/platform';
+import { navigateTo } from '@/utils/router';
+import { createCloseHandler, createToggleHandler } from '@/utils/state-helpers';
 
 interface ResponsiveNavigationProps {
   children: React.ReactNode;
@@ -121,78 +121,48 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
     }
   }, [pathname, currentRole]);
 
-  // Handle initial responsive detection - assume large screen on web initially to prevent bottom nav flash
+  // Handle initial responsive detection - useWindowDimensions automatically handles dimension changes
   useEffect(() => {
+    // On web, assume large screen initially to prevent bottom nav flash
     if (isWeb) {
-      // On web, assume large screen initially to prevent bottom nav flash
       setDimensionsReady(true);
-
-      // Mark dimensions as measured once we have a width > 0
-      if (width > 0 && !hasMeasuredDimensions) {
-        setHasMeasuredDimensions(true);
-      }
-
-      // Add resize listener for responsive updates on web
-      // Only execute in real browser environment (check for both window.addEventListener and document)
-      const isWebBrowser = typeof window !== 'undefined' 
-        && typeof window.addEventListener === 'function'
-        && typeof document !== 'undefined';
-      
-      if (isWebBrowser) {
-        const handleResize = () => {
-          // Force re-render to recalculate responsive layout
-          setDimensionsReady(true);
-          setHasMeasuredDimensions(true);
-        };
-
-        try {
-          window.addEventListener('resize', handleResize);
-          return () => {
-            try {
-              if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-                window.removeEventListener('resize', handleResize);
-              }
-            } catch (error) {
-              // Silently fail cleanup on mobile/non-browser environments
-              if (__DEV__) {
-                console.warn('Failed to remove resize listener:', error);
-              }
-            }
-          };
-        } catch (error) {
-          // Silently fail if addEventListener is not available
-          if (__DEV__) {
-            console.warn('Failed to add resize listener:', error);
-          }
-        }
-      }
     } else {
       // On mobile, wait for actual dimensions
       setDimensionsReady(true);
-      if (width > 0) {
-        setHasMeasuredDimensions(true);
-      }
+    }
+
+    // Mark dimensions as measured once we have a width > 0
+    // useWindowDimensions hook automatically triggers re-renders on dimension changes
+    if (width > 0 && !hasMeasuredDimensions) {
+      setHasMeasuredDimensions(true);
     }
   }, [width, hasMeasuredDimensions]);
 
   // Determine if we should show sidebar (large screens) or bottom nav (small screens)
-  // On web, default to showing sidebar to prevent bottom nav flash, but still respect actual screen size
-  const showSidebar = isWeb
-    ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Assume sidebar on web initially until dimensions are measured
-    : (dimensionsReady && width >= SIDEBAR_BREAKPOINT);  // Only show sidebar on mobile if dimensions confirm large screen
+  // Only show sidebar on desktop web browsers - never on mobile/webview platforms like Expo Go
+  // Check for touch capability and viewport size to distinguish mobile from desktop
+  const hasTouchCapability = isWeb && typeof window !== 'undefined' && 'ontouchstart' in window;
+  const isSmallViewport = height < 600; // Mobile devices typically have smaller height
 
-  // For web, reserve sidebar space immediately to prevent layout shift
-  const shouldReserveSidebarSpace = isWeb
-    ? (hasMeasuredDimensions ? width >= SIDEBAR_BREAKPOINT : true)  // Reserve space immediately on web
-    : (dimensionsReady && showSidebar);  // Only reserve on mobile when confirmed
+  const isMobilePlatform = !isWeb || hasTouchCapability || isSmallViewport;
+
+  const showSidebar = !isMobilePlatform && width >= SIDEBAR_BREAKPOINT && hasMeasuredDimensions;
+
+  // Reserve sidebar space only on desktop to prevent layout shift
+  const shouldReserveSidebarSpace = showSidebar;
 
   // Debug logging for development
   if (__DEV__) {
     console.log('ResponsiveNavigation Debug:', {
       platform: isWeb ? 'web' : 'mobile',
       width,
+      height,
       dimensionsReady,
       showSidebar,
+      hasTouchCapability,
+      isSmallViewport,
+      isMobilePlatform,
+      shouldShowBottomNav: dimensionsReady && !showSidebar,
       SIDEBAR_BREAKPOINT
     });
   }
@@ -308,13 +278,28 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
   };
 
   // Track keyboard height for mobile web (iOS Safari)
+  // Use useWindowDimensions hook for dimension changes - it automatically re-renders
   useEffect(() => {
     if (isWeb && typeof window !== 'undefined' && !showSidebar && isAIModalOpen) {
-      let initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+      // Check if we're in a real browser environment with addEventListener support
+      const hasAddEventListener = typeof window.addEventListener === 'function';
+      const hasVisualViewport = typeof window.visualViewport !== 'undefined' 
+        && window.visualViewport 
+        && typeof window.visualViewport.addEventListener === 'function';
+      
+      if (!hasAddEventListener) {
+        // Not a browser environment (e.g., Expo Go), reset keyboard height
+        setKeyboardHeight(0);
+        return;
+      }
+
+      let initialViewportHeight = hasVisualViewport 
+        ? (window.visualViewport?.height || window.innerHeight)
+        : window.innerHeight;
       
       const updateKeyboardHeight = () => {
         try {
-          if (window.visualViewport) {
+          if (hasVisualViewport && window.visualViewport) {
             // Visual Viewport API - more accurate
             const currentViewportHeight = window.visualViewport.height;
             const screenHeight = window.innerHeight;
@@ -360,27 +345,54 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       // Initial calculation
       updateKeyboardHeight();
 
-      // Listen to Visual Viewport changes (most accurate)
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateKeyboardHeight);
-        window.visualViewport.addEventListener('scroll', updateKeyboardHeight);
+      // Listen to Visual Viewport changes (most accurate) - only if available
+      if (hasVisualViewport && window.visualViewport) {
+        try {
+          window.visualViewport.addEventListener('resize', updateKeyboardHeight);
+          window.visualViewport.addEventListener('scroll', updateKeyboardHeight);
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('Failed to add visual viewport listeners:', error);
+          }
+        }
       }
 
-      // Fallback: listen to window resize
-      window.addEventListener('resize', updateKeyboardHeight);
+      // Fallback: listen to window resize - only if addEventListener is available
+      if (hasAddEventListener) {
+        try {
+          window.addEventListener('resize', updateKeyboardHeight);
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('Failed to add resize listener:', error);
+          }
+        }
+      }
 
       return () => {
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', updateKeyboardHeight);
-          window.visualViewport.removeEventListener('scroll', updateKeyboardHeight);
+        // Cleanup - only remove listeners if they were successfully added
+        if (hasVisualViewport && window.visualViewport) {
+          try {
+            if (typeof window.visualViewport.removeEventListener === 'function') {
+              window.visualViewport.removeEventListener('resize', updateKeyboardHeight);
+              window.visualViewport.removeEventListener('scroll', updateKeyboardHeight);
+            }
+          } catch (error) {
+            // Silently fail cleanup
+          }
         }
-        window.removeEventListener('resize', updateKeyboardHeight);
+        if (hasAddEventListener && typeof window.removeEventListener === 'function') {
+          try {
+            window.removeEventListener('resize', updateKeyboardHeight);
+          } catch (error) {
+            // Silently fail cleanup
+          }
+        }
       };
     } else {
       // Reset keyboard height when modal closes or sidebar is shown
       setKeyboardHeight(0);
     }
-  }, [isAIModalOpen, showSidebar]);
+  }, [isAIModalOpen, showSidebar, height]); // Include height dependency to react to dimension changes
 
   // Calculate AI modal positioning based on keyboard state
   const aiModalBottom = useMemo(() => {
@@ -744,6 +756,7 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
         backgroundColor="$backgroundSecondary"
         borderBottomColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
         borderBottomWidth="$0.5"
+        height={56}
         position="relative"
         shadowColor={resolvedTheme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : '$shadowColor'}
         shadowOffset={{ width: 0, height: 1 }}
@@ -754,7 +767,6 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
           alignItems="center"
           height="100%"
           justifyContent="space-between"
-          minHeight={56}
           paddingHorizontal="$3"
           paddingLeft={0}
           paddingRight={0}
@@ -775,8 +787,8 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
               onRoleChange={handleRoleChange}
             />
             
-            {/* News icon - only on big screens */}
-            {(isWeb || (dimensionsReady && showSidebar)) && (
+            {/* News icon - on all platforms */}
+            {dimensionsReady && (
               <Button
                 onPress={() => navigateTo('/(tabs)/news')}
                 backgroundColor="transparent"
@@ -812,10 +824,10 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
 
           {/* GA-X title - DEAD CENTER using absolute positioning */}
           <Button
-            style={isWeb ? { 
-              cursor: 'pointer',
-              transform: 'translateX(-50%)'
-            } : {}}
+            style={{
+              cursor: isWeb ? 'pointer' : 'default',
+              transform: 'translateX(-50%)' // Center horizontally on all platforms
+            }}
             onPress={() => {
               // Navigate to home page only if not already there
               if (pathname !== '/') {
@@ -831,16 +843,15 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             backgroundColor="transparent"
             bottom={0}
             height="100%"
-            hoverStyle={isWeb ? {
+            hoverStyle={{
               backgroundColor: INTERACTIVE_COLORS.hover,
               transform: 'translateX(-50%)',
-            } : {
-              backgroundColor: INTERACTIVE_COLORS.hover,
             }}
             left="50%"
             position="absolute"
             pressStyle={{
               backgroundColor: INTERACTIVE_COLORS.press,
+              transform: 'translateX(-50%)',
             }}
             top={0}
           >
@@ -892,10 +903,11 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
       <View
         animation="quick"
         flex={1}
-        paddingBottom={0}
+        minHeight={0}
+        paddingBottom={!showSidebar ? (width < SIDEBAR_BREAKPOINT ? 78 : 68) : 0} // Account for bottom nav height + extra padding on small screens
         paddingLeft={shouldReserveSidebarSpace ? 72 : 0}
         position="relative"
-        transition="padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        transition="padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       >
         {/* Sidebar Navigation - Overlays content on large screens */}
         {shouldReserveSidebarSpace && (
@@ -978,10 +990,15 @@ export function ResponsiveNavigation({ children }: ResponsiveNavigationProps) {
             backgroundColor="$backgroundSecondary"
             borderTopColor={resolvedTheme === 'dark' ? '#333333' : '$borderColor'}
             borderTopWidth="$0.5"
+            bottom={0}
             flexDirection="row"
             justifyContent="space-around"
+            left={0}
+            paddingBottom={!showSidebar && width < SIDEBAR_BREAKPOINT ? 18 : 6} // Extra 10px on small screens
             paddingHorizontal={0}
-            paddingVertical="$1.5"
+            paddingTop="$1.5"
+            position="absolute"
+            right={0}
             {...BOTTOM_NAV_SHADOW}
           >
             {bottomNavItems.map((item, index) => {
