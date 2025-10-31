@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Platform } from 'react-native';
-import { ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
+import { ROLE_CONFIG, Role } from '@/navigation';
 
 interface RoleContextType {
   currentRole: Role;

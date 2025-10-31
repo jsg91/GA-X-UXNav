@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { GeneratedNavItem, NAVIGATION_CONFIG, Role, generateNavigationForRole } from '@/constants/NAVIGATION';
+import { GeneratedNavItem, NAVIGATION_CONFIG, Role, generateNavigationForRole } from '@/navigation';
 
 interface UseNavigationItemsOptions {
   /**

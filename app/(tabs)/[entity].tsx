@@ -2,8 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 
 import { TabPlaceholder } from '@/components/ui/tab-placeholder';
-import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, XUISCHEMA_REGISTRY } from '@/constants/NAVIGATION';
 import { useRoleContext } from '@/hooks/use-role-context';
+import { EntityName, getEntityNameForRoute, getPageInfoForEntity, getPageInfoFromNavConfig, XUISCHEMA_REGISTRY } from '@/navigation';
 
 /**
  * Dynamic route handler for all routes
@@ -18,16 +18,19 @@ export default function DynamicEntityScreen() {
 
   // Map route names to entity names using derived mapping
   const entityName = getEntityNameForRoute(entity as string) as EntityName;
-  
+
   // First, try to get page info from NAVIGATION_CONFIG (top nav routes)
   const navConfigInfo = getPageInfoFromNavConfig(entity as string);
-  
+
   if (navConfigInfo) {
+    // Special handling for dashboard - include role in title
+    const title = (entity === 'dashboard' || !entity) ? `${currentRole.label} Dashboard` : navConfigInfo.title;
+
     return (
       <TabPlaceholder
         description={navConfigInfo.description || 'Page content coming soon...'}
         icon={navConfigInfo.icon}
-        title={navConfigInfo.title}
+        title={title}
       />
     );
   }

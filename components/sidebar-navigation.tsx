@@ -10,7 +10,7 @@ import { OPACITY } from '@/constants/opacity';
 import { TRANSFORM_SCALES } from '@/constants/transform-scales';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Role } from '@/constants/NAVIGATION';
+import { Role } from '@/navigation';
 import { useNavigationItems } from '@/hooks/use-navigation-items';
 import { getIconColor } from '@/utils/icons';
 import { isWeb } from '@/utils/platform';

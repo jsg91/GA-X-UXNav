@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MENU_ITEM_MIN_HEIGHT, MODAL_PANEL_DIMENSIONS, SIDEBAR_BREAKPOINT } from '@/constants/layout';
-import { ROLE_CONFIG, Role } from '@/constants/NAVIGATION';
+import { ROLE_CONFIG, Role } from '@/navigation';
 import { OPACITY } from '@/constants/opacity';
 import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
 import { Z_INDEX } from '@/constants/z-index';

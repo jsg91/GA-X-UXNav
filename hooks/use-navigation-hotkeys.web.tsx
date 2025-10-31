@@ -1,7 +1,7 @@
 import { usePathname } from 'expo-router';
 import { useHotkeys } from 'react-hotkeys-hook';
 
-import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
+import { NAVIGATION_CONFIG } from '@/navigation';
 import { isWeb } from '@/utils/platform';
 import { navigateTo } from '@/utils/router';
 

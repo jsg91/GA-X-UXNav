@@ -1,7 +1,7 @@
 import { AlertUtils } from '@/components/ui/alert-utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { HEADER_HEIGHT, HEADER_PADDING, ICON_SIZES, MODAL_PANEL_DIMENSIONS } from '@/constants/layout';
-import { NAVIGATION_CONFIG } from '@/constants/NAVIGATION';
+import { NAVIGATION_CONFIG } from '@/navigation';
 import { MODAL_PANEL_SHADOW } from '@/constants/shadow-styles';
 import { TRANSFORM_SCALES } from '@/constants/transform-scales';
 import { useThemeContext } from '@/hooks/use-theme-context';
